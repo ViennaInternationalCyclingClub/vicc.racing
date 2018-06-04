@@ -79,6 +79,15 @@ h4 {
     margin: 10px 0 0     0;
 
 }
+
+h5 {
+    margin: 5px 0 0     0;
+    font-size: 100%;
+}
+
+dl {
+    margin: 5px auto 30px auto;
+}
 .content h2 {
     color: #3580C2
 }
@@ -491,13 +500,18 @@ nav div ul li:hover:before {
     padding-top: 16px
 }
 
+#content p {
+    line-height: 80%;
+}
+
 @media (max-width: 767px) {
     #content {
         padding: 50px 0
     }
     #content p, #content h2, #content h3, #content h4, #content h5, #content small {
         margin-left: 10px;
-        margin-right: 10px
+        margin-right: 10px;
+        line-height: 100%;
     }
     .content blockquote {
         margin-left: 10px
