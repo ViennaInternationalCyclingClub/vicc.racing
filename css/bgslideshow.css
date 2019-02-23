@@ -4,12 +4,12 @@
   background-size: cover;
   background-position: center center;
   color: transparent;
-  height: 100%;
-  left: 0px;
+  height: 33%;
+  right: 10px;
   opacity: 0;
   position: absolute;
-  top: 0px;
-  width: 100%;
+  top: 300px;
+  width: 33%;
   z-index: -1;
 }
 
