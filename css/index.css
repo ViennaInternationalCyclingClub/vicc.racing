@@ -18,7 +18,7 @@ header {
 #logo {
     vertical-align: top;
     position: relative;
-    padding-top: 20px;
+    padding-top: 10px;
 }
 
 #logo h1 {
@@ -33,7 +33,7 @@ figure {
 
 #poster img {
     position: absolute;
-    top: 620px;
+    top: 650px;
     padding: 0px;
     width: 33%;
     right: 10px;
@@ -42,9 +42,6 @@ figure {
 @media (max-width: 1023px) {
     body {
         font-size: .8em
-    }
-    small.date {
-        font-size: .6em
     }
 }
 
@@ -62,11 +59,6 @@ figure {
 
 .nowrap {
     white-space: nowrap
-}
-
-small.date {
-    font-size: .7em;
-    color: gray
 }
 
 .text-centered {
@@ -92,7 +84,6 @@ small.date {
 }
 
 h1, h2 {
-    line-height: 40px;
     margin: 0
 }
 
@@ -383,6 +374,9 @@ nav div ul li:hover:before {
         height: 60px
     }
     #header .social {
+        position: absolute;
+        top: -200px;
+        right: 0px;
         height: 60px;
         display: inline-block
     }
@@ -432,6 +426,11 @@ nav div ul li:hover:before {
     }
     main {
         left: 0
+    }
+    #logo h1 {
+        text-align: center;
+        font-family: Century Gothic,CenturyGothic,AppleGothic,sans-serif; 
+        font-size: 1em;
     }
     #header .nav {
         display: none
@@ -490,7 +489,8 @@ nav div ul li:hover:before {
 
 @media (max-width: 767px) {
     #content {
-        padding: 50px 0
+        width: 100%;
+        padding: 50px 0;
     }
     #content p, #content h2, #content h3, #content h4, #content h5, #content small {
         margin-left: 10px;
