@@ -31,7 +31,12 @@ figure {
     margin: 0;
 }
 
-#poster img {
+#rightcolumn {
+    float: right;
+    clear: both;
+}
+
+.poster img {
     position: absolute;
     top: 650px;
     padding: 0px;
@@ -88,16 +93,16 @@ h1, h2 {
 }
 
 h3 {
-    margin: 10px 0 10px 0;
+    margin: 20px 0 10px 0;
 }
 
 h4 {
-    margin: 10px 0 0     0;
+    margin: 20px 0 0     0;
 
 }
 
 h5 {
-    margin: 5px 0 0     0;
+    margin: 12px 0 0     0;
     font-size: 100%;
 }
 
@@ -484,18 +489,37 @@ nav div ul li:hover:before {
 }
 
 #content p {
-    line-height: 80%;
+    line-height: 100%;
+}
+
+#content ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    margin-left: 0;
+    padding-left: 1.22em;
+    text-indent: -1.52em;
+}
+
+#content li {
+    padding-left: 16px;
+    margin: 0 0 10px 0;
+}
+
+#content li:before {
+    content: "🚲";
+    padding-right: 8px;
 }
 
 @media (max-width: 767px) {
     #content {
         width: 100%;
-        padding: 50px 0;
+        padding: 0;
     }
     #content p, #content h2, #content h3, #content h4, #content h5, #content small {
         margin-left: 10px;
         margin-right: 10px;
-        line-height: 100%;
+        line-height: 120%;
     }
     .content blockquote {
         margin-left: 10px
@@ -503,8 +527,6 @@ nav div ul li:hover:before {
     .crossfade {
         display: none;
     }
-    #poster>figure {
-        display: none;
-    }
 }
+
 
