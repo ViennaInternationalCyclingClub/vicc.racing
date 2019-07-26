@@ -14,7 +14,7 @@ if ( defined $secret and defined $signature )  {
     $signature =~ s/sha1=//;
     my $check_hmac = hmac_sha1_hex($postdata, $secret);
     if ( $check_hmac eq $signature ) {
-        if ( system("git pull $checkout_directory >/dev/null 2>&1") != 0 ) {
+        if ( system("git -C $checkout_directory pull $checkout_directory >/dev/null 2>&1") != 0 ) {
             warn "Repository checkout could not be updated: $!";
         }
         print $q->header(-type => 'application/json');
