@@ -31,7 +31,30 @@
   background-image: url(../images/bgslides_kids/21199547_10211662670740157_1794145562434655242_o.jpg);
 }
 
-
+.crossfade > figure:nth-child(5) {
+  animation-delay: 24s;
+  background-image: url(../images/bgslides_kids/59959974_1092662320918810_1301793880064131072_n.jpg);
+}
+.crossfade > figure:nth-child(6) {
+  animation-delay: 30s;
+  background-image: url(../images/bgslides_kids/60438934_10216299502258047_7895718510888747008_o.jpg);
+}
+.crossfade > figure:nth-child(7) {
+  animation-delay: 36s;
+  background-image: url(../images/bgslides_kids/70737494_10156545648888963_5542856179698368512_o.jpg);
+}
+.crossfade > figure:nth-child(8) {
+  animation-delay: 42s;
+  background-image: url(../images/bgslides_kids/ella_siegerehrung_60208552_10216299463697083_8152671775549816832_o.jpg);
+}
+.crossfade > figure:nth-child(9) {
+  animation-delay: 48s;
+  background-image: url(../images/bgslides_kids/ria_kurve_60078327_10216299495697883_6910860575517966336_o.jpg);
+}
+.crossfade > figure:nth-child(10) {
+  animation-delay: 54s;
+  background-image: url(../images/bgslides_kids/TOwHasOA.jpeg);
+}
 
 @keyframes 
 imageAnimation {  0% {

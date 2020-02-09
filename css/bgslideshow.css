@@ -1,5 +1,5 @@
 .crossfade > figure {
-  animation: imageAnimation 60s linear infinite 0s;
+  animation: imageAnimation 70s linear infinite 0s;
   backface-visibility: hidden;
   background-size: cover;
   background-position: center center;
@@ -16,55 +16,57 @@
 .crossfade > figure:nth-child(1) { background-image: url(../images/bgslides/elisabeth-donauinsel.jpg); }
 
 .crossfade > figure:nth-child(2) {
-  animation-delay: 6s;
-  background-image: url(../images/bgslides/male_bear-1H7A8943.jpg);
+  animation-delay: 5s;
+  background-image: url(../images/bgslides/19-06-11+AZ5A6896.jpg);
 }
-
 .crossfade > figure:nth-child(3) {
-  animation-delay: 12s;
-  background-image: url(../images/bgslides/ria_junior_fondo_21122297_10211662640299396_6349470745926281759_o.jpg);
+  animation-delay: 10s;
+  background-image: url(../images/bgslides/19-06-11+AZ5A7070.jpg);
 }
-
 .crossfade > figure:nth-child(4) {
-  animation-delay: 18s;
-  background-image: url(../images/bgslides/richi_till_donauinsel_21082824_1911382809121837_2787102306653660897_o.jpg);
-}
-
-.crossfade > figure:nth-child(5) {
-  animation-delay: 24s;
-  background-image: url(../images/bgslides/richi_till_michael_21083739_1911382989121819_7418609792471112657_o.jpg);
-}
-
-.crossfade > figure:nth-child(6) {
-  animation-delay: 30s;
-  background-image: url(../images/bgslides/female_bear-1H7A1675.jpg);
-}
-
-.crossfade > figure:nth-child(7) {
-  animation-delay: 36s;
-  background-image: url(../images/bgslides/ria_junior_fondo_18891440_1873750952885023_2719128250191233426_o.jpg);
-}
-
-.crossfade > figure:nth-child(8) {
-  animation-delay: 42s;
-  background-image: url(../images/bgslides/1H7A1612.jpg);
-}
-
-.crossfade > figure:nth-child(9) {
-  animation-delay: 48s;
-  background-image: url(../images/bgslides/1H7A8779.jpg);
-}
-
-.crossfade > figure:nth-child(10) {
-  animation-delay: 54s;
-  background-image: url(../images/bgslides/1H7A1633.jpg);
-}
-
-.crossfade > figure:nth-child(11) {
-  animation-delay: 60s;
+  animation-delay: 15s;
   background-image: url(../images/bgslides/1H7A1082.jpg);
 }
-
+.crossfade > figure:nth-child(5) {
+  animation-delay: 20s;
+  background-image: url(../images/bgslides/1H7A1612.jpg);
+}
+.crossfade > figure:nth-child(6) {
+  animation-delay: 25s;
+  background-image: url(../images/bgslides/1H7A1633.jpg);
+}
+.crossfade > figure:nth-child(7) {
+  animation-delay: 30s;
+  background-image: url(../images/bgslides/1H7A8779.jpg);
+}
+.crossfade > figure:nth-child(8) {
+  animation-delay: 35s;
+  background-image: url(../images/bgslides/60438934_10216299502258047_7895718510888747008_o.jpg);
+}
+.crossfade > figure:nth-child(9) {
+  animation-delay: 40s;
+  background-image: url(../images/bgslides/70182195_2346268928966554_1274464217180667904_o.jpg);
+}
+.crossfade > figure:nth-child(10) {
+  animation-delay: 45s;
+  background-image: url(../images/bgslides/70273508_2346268412299939_7574830332994650112_o.jpg);
+}
+.crossfade > figure:nth-child(11) {
+  animation-delay: 50s;
+  background-image: url(../images/bgslides/female_bear-1H7A1675.jpg);
+}
+.crossfade > figure:nth-child(12) {
+  animation-delay: 55s;
+  background-image: url(../images/bgslides/male_bear-1H7A8943.jpg);
+}
+.crossfade > figure:nth-child(13) {
+  animation-delay: 60s;
+  background-image: url(../images/bgslides/ria_junior_fondo_18891440_1873750952885023_2719128250191233426_o.jpg);
+}
+.crossfade > figure:nth-child(14) {
+  animation-delay: 65s;
+  background-image: url(../images/bgslides/richi_till_michael_21083739_1911382989121819_7418609792471112657_o.jpg);
+}
 
 @keyframes 
 imageAnimation {  0% {
