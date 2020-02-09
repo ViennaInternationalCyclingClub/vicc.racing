@@ -1,5 +1,5 @@
 .crossfade > figure {
-  animation: imageAnimation 24s linear infinite 0s;
+  animation: imageAnimation 60s linear infinite 0s;
   backface-visibility: hidden;
   background-size: cover;
   background-position: center center;
