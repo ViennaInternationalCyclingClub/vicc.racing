@@ -25,8 +25,8 @@ my $realname_mapping_file = 'realname_mapping.csv';
 
 my @result_csv_field_order = (
     'eliga_category_position', 'position', 'last_name', 'first_name', 'zwift_category', 'eliga_category', 'kategorie national',
-    'uciid', 'jahrgang', 'nationalität', 'club', 'race_time', 'race_time_formatted',
-    'eliga_category_timegap', 'wkg', 'male', 'fin', 'dq', 'avg_hr', 'flag',
+    'uciid', 'jahrgang', 'nationalität', 'club', 'race_time_formatted',
+    'eliga_category_timegap', 'wkg', 'race_time', 'male', 'fin', 'dq', 'avg_hr', 'flag',
     'filtered_by_zwiftpower', 'normalized_name',
 );
 
@@ -122,7 +122,8 @@ foreach my $record ( @{$zwift_power_results->{data}} ) {
         if ( not $full_row->{fin} ) {
             $full_row->{eliga_category_position} = 'DNF';
         }
-        elsif ( not $full_row->{avg_hr} ) {
+        # Do not require HRM for Juniors
+        elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/ ) {
             $full_row->{eliga_category_position} = 'DSQ';
         }
         elsif ( length $full_row->{club} == 0 ) {
