@@ -77,7 +77,7 @@ foreach my $record ( @{$zwift_power_results->{data}} ) {
     if ( exists $licenses->{$normalized_name} or
          (exists $realname_mapping->{$record->{name}} and exists $licenses->{$realname_mapping->{$record->{name}}}) ) {
         $full_row = record_to_row($record);
-        state @license_fields_to_add = ('jahrgang', 'uciid', 'kategorie national', 'nationalität', 'kategorie (uci)', 'geschlecht');
+        my @license_fields_to_add = ('jahrgang', 'uciid', 'kategorie national', 'nationalität', 'kategorie (uci)', 'geschlecht');
 
         if ( not exists $licenses->{$normalized_name} ) {
             $normalized_name = $realname_mapping->{$record->{name}};
