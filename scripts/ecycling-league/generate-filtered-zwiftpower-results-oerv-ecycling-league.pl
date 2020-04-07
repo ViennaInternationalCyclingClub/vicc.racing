@@ -9,8 +9,6 @@ use Text::CSV_XS ();
 use IO::Socket::SSL qw( SSL_VERIFY_NONE );
 use LWP::UserAgent ();
 use Cpanel::JSON::XS ();
-use DateTime::Duration;
-use DateTime::Format::Duration;
 use HTML::Entities;
 use Encode;
 use Number::Format;
@@ -126,6 +124,9 @@ foreach my $record ( @{$zwift_power_results->{data}} ) {
         elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/ ) {
             $full_row->{eliga_category_position} = 'DSQ';
         }
+        elsif ( $full_row->{eliga_category} eq 'U15ujuenger' ) {
+            $full_row->{eliga_category_position} = $full_row->{eliga_category};
+        }
         elsif ( length $full_row->{club} == 0 ) {
             $full_row->{eliga_category_position} = 'UNCATEGORIZED';
         }
@@ -149,7 +150,11 @@ sub resolve_category {
     my ($full_row) = @_;
 
     if ( defined $full_row->{'kategorie (uci)'}
-        and ($full_row->{'kategorie (uci)'} eq 'YOUTH' or $full_row->{'kategorie (uci)'} eq 'JUNIORS') ) {
+        and ($full_row->{'kategorie (uci)'} eq 'YOUTH' and $full_row->{'kategorie national'} =~ /\bU1(3|5)\b/ ) ) {
+        return 'U15ujuenger';
+    }
+    elsif ( defined $full_row->{'kategorie (uci)'}
+        and ($full_row->{'kategorie (uci)'} eq 'JUNIORS' or $full_row->{'kategorie (uci)'} eq 'YOUTH' ) ) {
         if ( $full_row->{'geschlecht'} eq 'M' ) {
             return 'JUNIORS M';
         }
