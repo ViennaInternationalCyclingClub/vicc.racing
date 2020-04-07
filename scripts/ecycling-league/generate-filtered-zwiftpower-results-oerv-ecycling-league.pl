@@ -222,7 +222,7 @@ sub fetch_json {
 sub normalize_name {
     my ($name) = @_;
 
-    state %charmap = ("ä" => "ae", "ü" => "ue", "ö" => "oe", "ß" => "ss" );
+    my %charmap = ("ä" => "ae", "ü" => "ue", "ö" => "oe", "ß" => "ss" );
     state $charmap_regex = join ("|", keys(%charmap));
     $name = lc decode_entities($name);
     $name =~ s/($charmap_regex)/$charmap{$1}/g;
