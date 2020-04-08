@@ -5,6 +5,7 @@ use warnings;
 use feature ':5.14';
 use utf8;
 
+use CGI::Simple;
 use Text::CSV_XS ();
 use IO::Socket::SSL qw( SSL_VERIFY_NONE );
 use LWP::UserAgent ();
@@ -13,10 +14,9 @@ use HTML::Entities;
 use Encode;
 use Number::Format;
 
-# live: https://zwiftpower.com/json.php?t=live&id=439676
-my $json_url = 'file:zwiftpower-results-first-oerv-ecycling-league-439676.json';
-# filtered: https://zwiftpower.com/cache3/results/439676_view.json
-my $json_filtered_url = 'file:zwiftpower-results-first-oerv-ecycling-league-439676-filtered.json';
+my $zp_live_url_pattern = 'https://zwiftpower.com/json.php?t=live&id=%d';
+my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.json';
+
 my $aktive_licenses = 'AktiveLizenzen.csv';
 my $aktive_bikecards = 'AktiveBikecards.csv';
 my $realname_mapping_file = 'realname_mapping.csv';
@@ -30,10 +30,14 @@ my @result_csv_field_order = (
 
 binmode( STDOUT, ':encoding(UTF-8)' );
 
+my $q = CGI::Simple->new;
+my $zpid = $q->param( 'zpid' );
+
 my $csv = Text::CSV_XS->new( { auto_diag => 1, binary => 1 } );
 my $json = Cpanel::JSON::XS->new();
 
-my $ua = LWP::UserAgent->new(timeout  => 1, ssl_opts => { verify_hostname => 0, SSL_verify_mode => SSL_VERIFY_NONE, });
+my $ua = LWP::UserAgent->new(timeout => 10, ssl_opts => { verify_hostname => 0, SSL_verify_mode => SSL_VERIFY_NONE, });
+$ua->agent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4093.3 Safari/537.36');
 $ua->default_header('Accept' => 'application/json');
 
 my $licenses;
@@ -60,87 +64,118 @@ while (my $row = $csv->getline_hr($fh_r)) {
 }
 close $fh_r;
 
-my $zwift_power_results = fetch_json($json_url);
-my $zwift_power_results_filtered = fetch_json($json_filtered_url);
-my %filtered_names;
-foreach my $record ( @{$zwift_power_results_filtered->{data}} ) {
-    $filtered_names{normalize_name($record->{name})} = 1;
+if ( not (defined $zpid and length $zpid and $zpid =~ /^\d+$/ ) ) {
+    print $q->header( -status => 200, -content_type => 'text/html; charset=utf-8' );
+    print <<EOS;
+<html><head><title>OERV eLiga ZwiftPower Results</title><style>body {font-family: Arial, Helvetica, sans-serif; } div, label, input { font-size: 1.5em; }</style></head>
+    <body>
+        <h1>ÖRV eLiga ZwiftPower Results</h1>
+        <div style="margin-top: 50px; padding: 10px; border: 1px solid black;">
+            <form action="$ENV{SCRIPT_NAME}">
+                <label for="zpid">ZwiftPower RaceID</label>:
+                <input type="number" name="zpid" min="1" max="999999" required="required" size="7" value=""/>
+                &#xa0;<input type="submit" value="Abfragen" />
+            </form>
+        </div>
+    </div>
+    </body>
+</html>
+EOS
 }
+else {
+    my $json_url = sprintf($zp_live_url_pattern, $zpid);
+    my $json_filtered_url = sprintf($zp_filtered_url_pattern, $zpid);
 
-my %fastest_per_eliga_category;
-my %eliga_category_positions;
-
-$csv->say(*STDOUT, \@result_csv_field_order);
-foreach my $record ( @{$zwift_power_results->{data}} ) {
-    my $normalized_name = normalize_name($record->{name});
-    my $full_row;
-    if ( exists $licenses->{$normalized_name} or
-         (exists $realname_mapping->{$record->{name}} and exists $licenses->{$realname_mapping->{$record->{name}}}) ) {
-        $full_row = record_to_row($record);
-        my @license_fields_to_add = ('jahrgang', 'uciid', 'kategorie national', 'nationalität', 'kategorie (uci)', 'geschlecht');
-
-        if ( not exists $licenses->{$normalized_name} ) {
-            $normalized_name = $realname_mapping->{$record->{name}};
-        }
-
-        $full_row = {
-            %$full_row,
-            club => $licenses->{$normalized_name}->{'team'}
-                ? $licenses->{$normalized_name}->{'team'}
-                : $licenses->{$normalized_name}->{'verein'},
-            last_name => $licenses->{$normalized_name}->{'name'},
-            first_name => $licenses->{$normalized_name}->{'vorname'},
-            map { $_ => $licenses->{$normalized_name}->{$_} } @license_fields_to_add,
-        };
-    }
-    elsif ( exists $bike_cards->{$normalized_name} ) {
-        $full_row = record_to_row($record);
-        $full_row = {
-            %$full_row,
-            club => $bike_cards->{$normalized_name}->{'bike card'},
-            last_name => $bike_cards->{$normalized_name}->{'nachname'},
-            first_name => $bike_cards->{$normalized_name}->{'vorname'},
-        };
-    }
-    elsif ( $record->{flag} eq 'at' ) {
-        $full_row = record_to_row($record);
-        $full_row = {
-            %$full_row,
-            club => '',
-            last_name => decode_entities($full_row->{name}),
-            first_name => '',
-        };
+    my $zwift_power_results = fetch_json($json_url);
+    my $zwift_power_results_filtered = fetch_json($json_filtered_url);
+    my %filtered_names;
+    foreach my $record ( @{$zwift_power_results_filtered->{data}} ) {
+        $filtered_names{normalize_name($record->{name})} = 1;
     }
 
-    if ( defined $full_row ) {
-        $full_row->{normalized_name} = $normalized_name;
-        $full_row->{eliga_category} = resolve_category( $full_row );
-        $full_row->{filtered_by_zwiftpower} = 1 unless exists $filtered_names{$normalized_name};
-        my $eliga_category_position;
-        if ( not $full_row->{fin} ) {
-            $full_row->{eliga_category_position} = 'DNF';
+    my %fastest_per_eliga_category;
+    my %eliga_category_positions;
+
+    #print $q->header( -status => 200, -content_type => 'text/plain; charset=utf-8', -expires => '0' );
+    print $q->header( -status => 200, -content_type => 'text/csv; charset=utf-8', -expires => '0', -content_disposition => 'inline; filename=results.csv', );
+    $csv->say(*STDOUT, \@result_csv_field_order);
+    foreach my $record ( @{$zwift_power_results->{data}} ) {
+        my $normalized_name = normalize_name($record->{name});
+        my $full_row;
+        if ( exists $licenses->{$normalized_name} or
+             (exists $realname_mapping->{$record->{name}} and exists $licenses->{$realname_mapping->{$record->{name}}}) ) {
+            $full_row = record_to_row($record);
+            my @license_fields_to_add = ('jahrgang', 'uciid', 'kategorie national', 'nationalität', 'kategorie (uci)', 'geschlecht');
+
+            if ( not exists $licenses->{$normalized_name} ) {
+                $normalized_name = $realname_mapping->{$record->{name}};
+            }
+
+            $full_row = {
+                %$full_row,
+                club => $licenses->{$normalized_name}->{'team'}
+                    ? $licenses->{$normalized_name}->{'team'}
+                    : $licenses->{$normalized_name}->{'verein'},
+                last_name => $licenses->{$normalized_name}->{'name'},
+                first_name => $licenses->{$normalized_name}->{'vorname'},
+                map { $_ => $licenses->{$normalized_name}->{$_} } @license_fields_to_add,
+            };
         }
-        # Do not require HRM for Juniors
-        elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/ ) {
-            $full_row->{eliga_category_position} = 'DSQ';
+        elsif ( exists $bike_cards->{$normalized_name} or
+             ( exists $realname_mapping->{$record->{name}} and exists $bike_cards->{$realname_mapping->{$record->{name}}}) ) {
+            $full_row = record_to_row($record);
+
+            if ( not exists $bike_cards->{$normalized_name} ) {
+                $normalized_name = $realname_mapping->{$record->{name}};
+            }
+
+            $full_row = {
+                %$full_row,
+                club => $bike_cards->{$normalized_name}->{'bike card'},
+                last_name => $bike_cards->{$normalized_name}->{'nachname'},
+                first_name => $bike_cards->{$normalized_name}->{'vorname'},
+            };
         }
-        elsif ( $full_row->{eliga_category} eq 'U15ujuenger' ) {
-            $full_row->{eliga_category_position} = $full_row->{eliga_category};
-        }
-        elsif ( length $full_row->{club} == 0 ) {
-            $full_row->{eliga_category_position} = 'UNCATEGORIZED';
-        }
-        else {
-            $full_row->{eliga_category_position} = ++$eliga_category_positions{$full_row->{eliga_category}};
-        }
-        if ( not defined $fastest_per_eliga_category{$full_row->{eliga_category}} and $full_row->{eliga_category_position} =~ /^\d+$/ ) {
-            $fastest_per_eliga_category{$full_row->{eliga_category}} = $full_row->{race_time};
-        }
-        elsif ( $full_row->{eliga_category_position} =~ /^\d+$/ ) {
-            $full_row->{eliga_category_timegap} = format_ms( $full_row->{race_time} - $fastest_per_eliga_category{$full_row->{eliga_category}} );
+        elsif ( $record->{flag} eq 'at' ) {
+            $full_row = record_to_row($record);
+            $full_row = {
+                %$full_row,
+                club => '',
+                last_name => decode_entities($full_row->{name}),
+                first_name => '',
+            };
         }
 
-        $csv->say(*STDOUT, [( map {$full_row->{$_}} @result_csv_field_order)]);
+        if ( defined $full_row ) {
+            $full_row->{normalized_name} = $normalized_name;
+            $full_row->{eliga_category} = resolve_category( $full_row );
+            $full_row->{filtered_by_zwiftpower} = 1 unless exists $filtered_names{$normalized_name};
+            my $eliga_category_position;
+            if ( not $full_row->{fin} and length $full_row->{club} ) {
+                $full_row->{eliga_category_position} = 'DNF';
+            }
+            # Do not require HRM for Juniors
+            elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/ ) {
+                $full_row->{eliga_category_position} = 'DSQ';
+            }
+            elsif ( $full_row->{eliga_category} eq 'U15ujuenger' ) {
+                $full_row->{eliga_category_position} = $full_row->{eliga_category};
+            }
+            elsif ( length $full_row->{club} == 0 ) {
+                $full_row->{eliga_category_position} = 'UNCATEGORIZED';
+            }
+            else {
+                $full_row->{eliga_category_position} = ++$eliga_category_positions{$full_row->{eliga_category}};
+            }
+            if ( not defined $fastest_per_eliga_category{$full_row->{eliga_category}} and $full_row->{eliga_category_position} =~ /^\d+$/ ) {
+                $fastest_per_eliga_category{$full_row->{eliga_category}} = $full_row->{race_time};
+            }
+            elsif ( $full_row->{eliga_category_position} =~ /^\d+$/ ) {
+                $full_row->{eliga_category_timegap} = format_ms( $full_row->{race_time} - $fastest_per_eliga_category{$full_row->{eliga_category}} );
+            }
+
+            $csv->say(*STDOUT, [( map {$full_row->{$_}} @result_csv_field_order)]);
+        }
     }
 }
 
@@ -213,7 +248,9 @@ sub fetch_json {
 
     my $response = $ua->get($url);
     if ( not $response->is_success ) {
-        die sprintf('Could not fetch url "%s": "%s"', $url, $response->status_line);
+        print $q->header( -status => 500 );
+        printf('Could not fetch url "%s": "%s"', $url, $response->status_line);
+        exit;
     }
 
     return $json->decode($response->decoded_content);
