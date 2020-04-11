@@ -154,15 +154,15 @@ else {
             if ( not $full_row->{fin} and length $full_row->{club} ) {
                 $full_row->{eliga_category_position} = 'DNF';
             }
+            elsif ( length $full_row->{club} == 0 ) {
+                $full_row->{eliga_category_position} = 'UNCATEGORIZED';
+            }
             # Do not require HRM for Juniors
             elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/ ) {
                 $full_row->{eliga_category_position} = 'DSQ';
             }
             elsif ( $full_row->{eliga_category} eq 'U15ujuenger' ) {
                 $full_row->{eliga_category_position} = $full_row->{eliga_category};
-            }
-            elsif ( length $full_row->{club} == 0 ) {
-                $full_row->{eliga_category_position} = 'UNCATEGORIZED';
             }
             else {
                 $full_row->{eliga_category_position} = ++$eliga_category_positions{$full_row->{eliga_category}};
