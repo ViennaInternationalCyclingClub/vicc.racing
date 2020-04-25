@@ -26,7 +26,7 @@ my @result_csv_field_order = (
     'eliga_category_position', 'position', 'last_name', 'first_name', 'zwift_category', 'eliga_category', 'kategorie national',
     'uciid', 'jahrgang', 'nationalität', 'club', 'race_time_formatted',
     'eliga_category_timegap', 'wkg', 'race_time', 'male', 'fin', 'dq', 'avg_hr', 'flag',
-    'filtered_by_zwiftpower', 'normalized_name', 'primes_points'
+    'filtered_by_zwiftpower', 'normalized_name', 'full_name', 'primes_points'
 );
 
 binmode( STDOUT, ':encoding(UTF-8)' );
@@ -44,6 +44,8 @@ if ( defined $rprimes and length $rprimes) {
 else {
     @relevant_primes = qw(4 8 12);
 }
+my $relevant_banner = $q->param( 'relevant_banner' );
+$relevant_banner ||= 'Crit City Dolphin Sprint';
 
 my $csv = Text::CSV_XS->new( { auto_diag => 1, binary => 1 } );
 my $json = Cpanel::JSON::XS->new();
@@ -158,6 +160,7 @@ else {
 
         if ( defined $full_row ) {
             $full_row->{normalized_name} = $normalized_name;
+            $full_row->{full_name} = $full_row->{last_name} . ' ' . $full_row->{first_name};
             $full_row->{eliga_category} = resolve_category( $full_row );
             $full_row->{filtered_by_zwiftpower} = 1 unless exists $filtered{$normalized_name};
             my $eliga_category_position;
@@ -211,6 +214,7 @@ sub calculate_primes_points {
     }
 
     state $zwift_power_results = fetch_json(sprintf($zp_primes_url_pattern, $zpid));
+    my @relevant_banners = grep { $_->{name} eq 'Crit City Dolphin Sprint' } @{$zwift_power_results->{data}};
     my @prime_points = qw(5 3 2 1);
     my @riders = map { "rider_$_" } (1..10);
     my %eliga_riders_with_points;
@@ -218,7 +222,7 @@ sub calculate_primes_points {
         my $i = 0;
         foreach my $rider (@riders) {
             last if $i == scalar(@prime_points) - 1;
-            my $current_rider = normalize_name($zwift_power_results->{data}->[$prime-1]->{$rider}->{name});
+            my $current_rider = normalize_name($relevant_banners[$prime-1]->{$rider}->{name});
             if ( exists $all_eliga_riders{$current_rider} ) {
                 $eliga_riders_with_points{$current_rider} = $prime_points[$i++];
             }
@@ -261,11 +265,10 @@ sub record_to_row {
     # state $number_format = Number::Format->new(
     #     -thousands_sep   => '.',
     #     -decimal_point   => ',',);
-
     return {
         race_time => $record->{race_time}->[0],
         race_time_formatted => format_ms($record->{race_time}->[0]),
-        avg_hr => $filtered->{$normalized_name}->{ahr}->[0],
+        avg_hr => $filtered->{$normalized_name}->{avg_hr}->[0],
         #wkg => $number_format->format_number($record->{wkg}->[0]),
         wkg => $record->{wkg}->[0],
         position => $record->{fin} ? $record->{position} : 'DNF',
