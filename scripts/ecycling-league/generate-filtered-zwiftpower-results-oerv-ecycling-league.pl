@@ -168,7 +168,9 @@ else {
                 $full_row->{eliga_category_position} = 'UNCATEGORIZED';
             }
             # Do not require HRM for Juniors
-            elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/ ) {
+            elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/
+                # white-list riders which proved they actually have ridden with HR data
+                and not $full_row->{normalized_name} =~ /(konczer|tzinger|gratzer|schauer|janecka|brunhofer|loderer)/ ) {
                 $full_row->{eliga_category_position} = 'DSQ';
             }
             elsif ( $full_row->{eliga_category} eq 'U15ujuenger' ) {
