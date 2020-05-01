@@ -13,10 +13,12 @@ use Cpanel::JSON::XS ();
 use HTML::Entities;
 use Encode;
 use Number::Format;
+use List::MoreUtils qw(first_index);
 
 my $zp_live_url_pattern = 'https://zwiftpower.com/json.php?t=live&id=%d';
 my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.json';
-my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&zid=%d';
+my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&zid=%d&_=' . localtime();
+my $zp_sprints_and_koms_url_pattern = 'https://zwiftpower.com/api3.php?do=event_sprints&zid=%d&_=' . localtime();
 
 my $aktive_licenses = 'AktiveLizenzen.csv';
 my $aktive_bikecards = 'AktiveBikecards.csv';
@@ -26,7 +28,9 @@ my @result_csv_field_order = (
     'eliga_category_position', 'position', 'last_name', 'first_name', 'zwift_category', 'eliga_category', 'kategorie national',
     'uciid', 'jahrgang', 'nationalität', 'club', 'race_time_formatted',
     'eliga_category_timegap', 'wkg', 'race_time', 'male', 'fin', 'dq', 'avg_hr', 'flag',
-    'filtered_by_zwiftpower', 'normalized_name', 'full_name', 'primes_points'
+    'filtered_by_zwiftpower', 'normalized_name', 'full_name', 'primes_points',
+    'sprints_and_koms_points-ELITE M', 'sprints_and_koms_points-ELITE W', 'sprints_and_koms_points-JUNIOR M', 'sprints_and_koms_points-JUNIOR W',
+    'sprints_and_koms_points-U15ujuenger',
 );
 
 binmode( STDOUT, ':encoding(UTF-8)' );
@@ -44,8 +48,73 @@ if ( defined $rprimes and length $rprimes) {
 else {
     @relevant_primes = qw(4 8 12);
 }
-my $relevant_banner = $q->param( 'relevant_banner' );
-$relevant_banner ||= 'Crit City Dolphin Sprint';
+our $relevant_banner = $q->param( 'relevant_banner' );
+
+my $sprints_and_koms = $q->param( 'sprints_and_koms' );
+my @zp_sprints_koms = (
+    'Main Sprint',
+    'Box Hill',
+    'Forward Sprint',
+    'Second Sprint',
+    'Reverse KOM',
+    'Forward KOM',
+    'Reverse Sprint',
+    'Forward Sprint',
+    'Volcano Climb',
+    'Volcano Circuit',
+    'Alpe du Zwift',
+    'Jungle Circuit',
+    'Forward Epic',
+    'Reverse Epic',
+    'Volcano Circuit',
+    'London Loop',
+    'Fox Hill',
+    'Leith Hill',
+    'Keith Hill',
+    'Forward KOM',
+    'Forward Sprint',
+    'UCI Lap',
+    'Reverse Sprint',
+    'Reverse KOM',
+    'UCI Lap',
+    'Libby Hill',
+    '23rd Street',
+    'NY Climb Forward',
+    'Central Park Loop',
+    'NY Sprint',
+    'NY Climb Reverse',
+    'NY Sprint 2',
+    'Central Park Reverse',
+    'Fuego Flats Short',
+    'Fuego Flats Long',
+    'TT Lap',
+    'Titans Grove Reverse',
+    'Titans Grove Forward',
+    'Yorkshire KOM Forward',
+    'Yorkshire Sprint Forward',
+    'Yorkshire UCI Forward',
+    'Yorkshire KOM Reverse',
+    'Yorkshire Sprint Reverse',
+    'Yorkshire UCI Reverse',
+    'Crit City Lap',
+    'Crit City Sprint',
+    'Crit City Lap',
+    'Crit City Sprint',
+    'Reverse Sprint',
+    'Reverse Sprint 2',
+    'Reverse UCI',
+    'Reverse KOM',
+    'Reverse 23rd Street',
+);
+
+our @sprints_and_koms_ids;
+if ( defined $sprints_and_koms ) {
+    my @sprints_and_koms_names = split(',', $sprints_and_koms);
+    foreach my $name ( @sprints_and_koms_names ) {
+        my $index = first_index { $_ eq $name } @zp_sprints_koms;
+        push( @sprints_and_koms_ids, $index + 1 ) if defined $index;
+    }
+}
 
 my $csv = Text::CSV_XS->new( { auto_diag => 1, binary => 1 } );
 my $json = Cpanel::JSON::XS->new();
@@ -198,23 +267,70 @@ else {
     print $q->header( -status => 200, -content_type => 'text/csv; charset=utf-8', -expires => '0', -content_disposition => 'inline; filename=results.csv', );
     $csv->say(*STDOUT, \@result_csv_field_order);
     foreach my $row ( @output_rows ) {
-        $row->{primes_points} = calculate_primes_points( \@output_rows, $row );
+        calculate_primes_points( \@output_rows, $row );
+        calculate_sprints_koms_points( \@output_rows, $row );
         $csv->say(*STDOUT, [( map {$row->{$_}} @result_csv_field_order)]);
     }
 }
 
+state %all_eliga_riders;
+
 exit 0;
 
-sub calculate_primes_points {
+sub calculate_sprints_koms_points {
     my ($all_rows, $full_row) = @_;
 
-    state %all_eliga_riders;
+    return unless scalar @sprints_and_koms_ids;
+
     foreach my $row (@$all_rows) {
         $all_eliga_riders{$row->{normalized_name}} = $row if defined $row->{eliga_category};
     }
 
-    state $zwift_power_results = fetch_json(sprintf($zp_primes_url_pattern, $zpid));
-    my @relevant_banners = grep { $_->{name} eq 'Crit City Dolphin Sprint' } @{$zwift_power_results->{data}};
+    state $zwift_sprints_and_koms_results = fetch_json(sprintf($zp_sprints_and_koms_url_pattern, $zpid));
+    my %all_eliga_riders_by_category;
+    foreach my $rider ( @{$zwift_sprints_and_koms_results->{data}} ) {
+        my $current_rider = normalize_name($rider->{name});
+        if ( exists $all_eliga_riders{$current_rider} ) {
+            $all_eliga_riders_by_category{$full_row->{eliga_category}}->{$current_rider} = $rider->{msec};
+        }
+    }
+
+    my %riders_per_category_sorted;
+    foreach my $sprint_or_kom ( @sprints_and_koms_ids ) {
+        foreach my $eliga_category ( keys %all_eliga_riders_by_category ) {
+            my @sorted_riders = sort {
+                    $all_eliga_riders_by_category{$eliga_category}->{$a}->{$sprint_or_kom} <=> $all_eliga_riders_by_category{$eliga_category}->{$b}->{$sprint_or_kom}
+                } keys %{$all_eliga_riders_by_category{$eliga_category}};
+            $riders_per_category_sorted{$sprint_or_kom}{$eliga_category} = \@sorted_riders;
+        }
+    }
+
+    my $bonus_points = 0;
+    foreach my $sprint_or_kom ( @sprints_and_koms_ids ) {
+        if ( $riders_per_category_sorted{$sprint_or_kom}{$full_row->{eliga_category}}->[0] eq $full_row->{normalized_name} ) {
+            $bonus_points += $primes_bonus_points;
+        }
+    }
+
+    $full_row->{"sprints_and_koms_points-" . $full_row->{eliga_category}} = $bonus_points;
+
+    return 1;
+}
+
+sub calculate_primes_points {
+    my ($all_rows, $full_row) = @_;
+
+    if ( not $relevant_banner ) {
+        $full_row->{primes_points} = 0;
+        return;
+    }
+
+    foreach my $row (@$all_rows) {
+        $all_eliga_riders{$row->{normalized_name}} = $row if defined $row->{eliga_category};
+    }
+
+    state $zwift_power_primes_results = fetch_json(sprintf($zp_primes_url_pattern, $zpid));
+    my @relevant_banners = grep { $_->{name} eq $relevant_banner } @{$zwift_power_primes_results->{data}};
     my @prime_points = qw(5 3 2 1);
     my @riders = map { "rider_$_" } (1..10);
     my %eliga_riders_with_points;
@@ -230,8 +346,14 @@ sub calculate_primes_points {
     }
 
     my @sorted_riders = reverse sort { $eliga_riders_with_points{$a} <=> $eliga_riders_with_points{$b} } keys %eliga_riders_with_points;
-    return $primes_bonus_points if $sorted_riders[0] eq $full_row->{normalized_name};
-    return 0;
+    if ( $sorted_riders[0] eq $full_row->{normalized_name} ) {
+        $full_row->{primes_points} = $primes_bonus_points;
+    }
+    else {
+        $full_row->{primes_points} = 0;
+    }
+
+    return 1;
 }
 
 sub resolve_category {
@@ -315,3 +437,4 @@ sub normalize_name {
 
     return $name;
 }
+
