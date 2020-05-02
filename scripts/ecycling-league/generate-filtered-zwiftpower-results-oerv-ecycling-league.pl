@@ -29,7 +29,7 @@ my @result_csv_field_order = (
     'uciid', 'jahrgang', 'nationalität', 'club', 'race_time_formatted',
     'eliga_category_timegap', 'wkg', 'race_time', 'male', 'fin', 'dq', 'avg_hr', 'flag',
     'filtered_by_zwiftpower', 'normalized_name', 'full_name', 'primes_points',
-    'sprints_and_koms_points-ELITE M', 'sprints_and_koms_points-ELITE W', 'sprints_and_koms_points-JUNIOR M', 'sprints_and_koms_points-JUNIOR W',
+    'sprints_and_koms_points-ELITE M', 'sprints_and_koms_points-ELITE W', 'sprints_and_koms_points-JUNIORS M', 'sprints_and_koms_points-JUNIORS W',
     'sprints_and_koms_points-U15ujuenger',
 );
 
@@ -242,8 +242,9 @@ else {
             # Do not require HRM for Juniors
             elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/
                 # white-list riders which proved they actually have ridden with HR data
-                and not $full_row->{normalized_name} =~ /(konczer|tzinger|gratzer|schauer|janecka|brunhofer|loderer)/ ) {
+                and not $full_row->{normalized_name} =~ /(konczer|gratzer|janecka|brunhofer)/ ) {
                 $full_row->{eliga_category_position} = 'DSQ';
+                $full_row->{position} = 'DSQ';
             }
             elsif ( $full_row->{eliga_category} eq 'U15ujuenger' ) {
                 $full_row->{eliga_category_position} = $full_row->{eliga_category};
@@ -253,6 +254,7 @@ else {
             }
             if ( not defined $fastest_per_eliga_category{$full_row->{eliga_category}} and $full_row->{eliga_category_position} =~ /^\d+$/ ) {
                 $fastest_per_eliga_category{$full_row->{eliga_category}} = $full_row->{race_time};
+                $full_row->{eliga_finisher} = 1;
             }
             elsif ( $full_row->{eliga_category_position} =~ /^\d+$/ ) {
                 $full_row->{eliga_finisher} = 1;
@@ -282,20 +284,38 @@ sub calculate_sprints_koms_points {
 
     return unless scalar @sprints_and_koms_ids;
 
+    my $riders_per_category_sorted = _setup_sprints_and_koms($all_rows);
+
+    my $bonus_points = 0;
+    foreach my $sprint_or_kom ( @sprints_and_koms_ids ) {
+        if ( $riders_per_category_sorted->{$sprint_or_kom}{$full_row->{eliga_category}}->[0] eq $full_row->{normalized_name} ) {
+            $bonus_points += $primes_bonus_points;
+        }
+    }
+
+    $full_row->{"sprints_and_koms_points-" . $full_row->{eliga_category}} = $bonus_points;
+    return 1;
+}
+
+sub _setup_sprints_and_koms {
+    my ($all_rows) = @_;
+
+    state %riders_per_category_sorted;
+    return \%riders_per_category_sorted if scalar keys %riders_per_category_sorted;
+
     foreach my $row (@$all_rows) {
         $all_eliga_riders{$row->{normalized_name}} = $row if defined $row->{eliga_category};
     }
 
     state $zwift_sprints_and_koms_results = fetch_json(sprintf($zp_sprints_and_koms_url_pattern, $zpid));
-    my %all_eliga_riders_by_category;
+    state %all_eliga_riders_by_category;
     foreach my $rider ( @{$zwift_sprints_and_koms_results->{data}} ) {
         my $current_rider = normalize_name($rider->{name});
-        if ( exists $all_eliga_riders{$current_rider} ) {
-            $all_eliga_riders_by_category{$full_row->{eliga_category}}->{$current_rider} = $rider->{msec};
+        if ( exists $all_eliga_riders{$current_rider} and $all_eliga_riders{$current_rider}->{eliga_finisher} ) {
+            $all_eliga_riders_by_category{$all_eliga_riders{$current_rider}->{eliga_category}}->{$current_rider} = $rider->{msec};
         }
     }
 
-    my %riders_per_category_sorted;
     foreach my $sprint_or_kom ( @sprints_and_koms_ids ) {
         foreach my $eliga_category ( keys %all_eliga_riders_by_category ) {
             my @sorted_riders = sort {
@@ -305,16 +325,7 @@ sub calculate_sprints_koms_points {
         }
     }
 
-    my $bonus_points = 0;
-    foreach my $sprint_or_kom ( @sprints_and_koms_ids ) {
-        if ( $riders_per_category_sorted{$sprint_or_kom}{$full_row->{eliga_category}}->[0] eq $full_row->{normalized_name} ) {
-            $bonus_points += $primes_bonus_points;
-        }
-    }
-
-    $full_row->{"sprints_and_koms_points-" . $full_row->{eliga_category}} = $bonus_points;
-
-    return 1;
+    return \%riders_per_category_sorted;
 }
 
 sub calculate_primes_points {
