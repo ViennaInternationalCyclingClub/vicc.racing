@@ -398,16 +398,19 @@ sub resolve_category {
 sub record_to_row {
     my ($record,$normalized_name,$filtered) = @_;
 
-    my @one_to_ones = qw(flag male fin dq grp name);
+    my @one_to_ones = qw(flag male dq grp name);
     # state $number_format = Number::Format->new(
     #     -thousands_sep   => '.',
     #     -decimal_point   => ',',);
     my $position;
+    my $fin;
     if ( $in_resultlist_is_finished and $filtered->{$normalized_name}->{pos} ) {
         $position = $filtered->{$normalized_name}->{pos};
+        $fin = 1;
     }
     elsif ( $record->{fin} ) {
         $position = $record->{position};
+        $fin = 1;
     }
     else {
         $position = 'DNF';
@@ -420,6 +423,7 @@ sub record_to_row {
         #wkg => $number_format->format_number($record->{wkg}->[0]),
         wkg => $record->{wkg}->[0],
         position => $position,
+        fin => $fin,
         zwift_category => $filtered->{$normalized_name}->{category},
         map { $_ => $record->{$_} } @one_to_ones,
     };
