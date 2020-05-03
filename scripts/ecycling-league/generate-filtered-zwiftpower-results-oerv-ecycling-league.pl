@@ -16,7 +16,7 @@ use Number::Format;
 use List::MoreUtils qw(first_index);
 
 my $zp_live_url_pattern = 'https://zwiftpower.com/json.php?t=live&id=%d';
-my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.json';
+my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.json?_=' . localtime();
 my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&zid=%d&_=' . localtime();
 my $zp_sprints_and_koms_url_pattern = 'https://zwiftpower.com/api3.php?do=event_sprints&zid=%d&_=' . localtime();
 
@@ -37,6 +37,10 @@ binmode( STDOUT, ':encoding(UTF-8)' );
 
 my $q = CGI::Simple->new;
 my $zpid = $q->param( 'zpid' );
+
+# Depending on the type of race, we need to decide whether "finished" is coming from the live API endpoint with "fin:1" 
+# or it is enough if a rider is the final ZP result list
+our $in_resultlist_is_finished = 1;
 
 our @relevant_primes;
 our $primes_bonus_points = $q->param( 'primes_bonus_points' );
@@ -398,13 +402,24 @@ sub record_to_row {
     # state $number_format = Number::Format->new(
     #     -thousands_sep   => '.',
     #     -decimal_point   => ',',);
+    my $position;
+    if ( $in_resultlist_is_finished and $filtered->{$normalized_name}->{pos} ) {
+        $position = $filtered->{$normalized_name}->{pos};
+    }
+    elsif ( $record->{fin} ) {
+        $position = $record->{position};
+    }
+    else {
+        $position = 'DNF';
+    }
+
     return {
         race_time => $record->{race_time}->[0],
         race_time_formatted => format_ms($record->{race_time}->[0]),
         avg_hr => $filtered->{$normalized_name}->{avg_hr}->[0],
         #wkg => $number_format->format_number($record->{wkg}->[0]),
         wkg => $record->{wkg}->[0],
-        position => $record->{fin} ? $record->{position} : 'DNF',
+        position => $position,
         zwift_category => $filtered->{$normalized_name}->{category},
         map { $_ => $record->{$_} } @one_to_ones,
     };
