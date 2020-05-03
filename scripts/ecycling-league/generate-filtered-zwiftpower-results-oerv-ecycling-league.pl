@@ -419,7 +419,7 @@ sub record_to_row {
     return {
         race_time => $record->{race_time}->[0],
         race_time_formatted => format_ms($record->{race_time}->[0]),
-        avg_hr => $filtered->{$normalized_name}->{avg_hr}->[0],
+        avg_hr => $filtered->{$normalized_name}->{avg_hr}->[0] || $record->{ahr}->[0],
         #wkg => $number_format->format_number($record->{wkg}->[0]),
         wkg => $record->{wkg}->[0],
         position => $position,
