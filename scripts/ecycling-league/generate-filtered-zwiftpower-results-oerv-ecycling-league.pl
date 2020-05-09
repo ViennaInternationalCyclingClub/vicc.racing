@@ -175,6 +175,10 @@ else {
 
     my $zwift_power_results = fetch_json($json_url);
     my $zwift_power_results_filtered = fetch_json($json_filtered_url);
+    # some races *may* not have live results. Fallback to the filtered ones in case
+    if ( not defined $zwift_power_results ) {
+        $zwift_power_results = $zwift_power_results_filtered;
+    }
     my %filtered;
     foreach my $record ( @{$zwift_power_results_filtered->{data}} ) {
         $filtered{normalize_name($record->{name})} = $record;
@@ -416,12 +420,16 @@ sub record_to_row {
         $position = 'DNF';
     }
 
+    my $race_time = $record->{race_time}->[0];
+    $race_time ||= ($record->{time}->[0] * 1000);
+    my $race_time_formatted = format_ms($race_time);
+
     return {
-        race_time => $record->{race_time}->[0],
-        race_time_formatted => format_ms($record->{race_time}->[0]),
+        race_time => $race_time,
+        race_time_formatted => $race_time_formatted,
         avg_hr => $filtered->{$normalized_name}->{avg_hr}->[0] || $record->{ahr}->[0],
         #wkg => $number_format->format_number($record->{wkg}->[0]),
-        wkg => $record->{wkg}->[0],
+        wkg => $record->{wkg}->[0] || $filtered->{$normalized_name}->{avg_wkg}->[0],
         position => $position,
         fin => $fin,
         zwift_category => $filtered->{$normalized_name}->{category},
@@ -451,7 +459,9 @@ sub fetch_json {
         exit;
     }
 
-    return $json->decode($response->decoded_content);
+    my $content = $response->decoded_content;
+    return unless $content;
+    return $json->decode($content);
 }
 
 sub normalize_name {
