@@ -254,9 +254,6 @@ else {
                 $full_row->{eliga_category_position} = 'DSQ';
                 $full_row->{position} = 'DSQ';
             }
-            elsif ( $full_row->{eliga_category} eq 'U15ujuenger' ) {
-                $full_row->{eliga_category_position} = $full_row->{eliga_category};
-            }
             else {
                 $full_row->{eliga_category_position} = ++$eliga_category_positions{$full_row->{eliga_category}};
             }
