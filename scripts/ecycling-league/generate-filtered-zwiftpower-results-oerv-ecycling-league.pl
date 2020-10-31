@@ -20,6 +20,11 @@ my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.jso
 my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&zid=%d&_=' . localtime();
 my $zp_sprints_and_koms_url_pattern = 'https://zwiftpower.com/api3.php?do=event_sprints&zid=%d&_=' . localtime();
 
+# $CGI::Simple::DEBUG = 1;
+# $zp_live_url_pattern = "$ENV{BASE_PATH}697438_live.json";
+# $zp_filtered_url_pattern = "$ENV{BASE_PATH}697438_results.json";
+# $zp_sprints_and_koms_url_pattern = "$ENV{BASE_PATH}697438_event_sprints.json";
+
 my $aktive_licenses = 'AktiveLizenzen.csv';
 my $aktive_bikecards = 'AktiveBikecards.csv';
 my $realname_mapping_file = 'realname_mapping.csv';
@@ -29,9 +34,14 @@ my @result_csv_field_order = (
     'uciid', 'jahrgang', 'nationalität', 'club', 'race_time_formatted',
     'eliga_category_timegap', 'wkg', 'race_time', 'male', 'fin', 'dq', 'avg_hr', 'flag',
     'filtered_by_zwiftpower', 'normalized_name', 'full_name', 'primes_points',
-    'sprints_and_koms_points-ELITE M', 'sprints_and_koms_points-ELITE W', 'sprints_and_koms_points-JUNIORS M', 'sprints_and_koms_points-JUNIORS W',
-    'sprints_and_koms_points-U15ujuenger',
 );
+
+my @ELIGA_CATEGORIES = qw(ELITE JUNIORS YOUTH AMATEURE/MASTERS BIKECARD);
+foreach my $sex (qw(M W)) {
+    foreach my $category ( @ELIGA_CATEGORIES ) {
+        push(@result_csv_field_order, sprintf('sprints_and_koms_points-%s %s', $category, $sex));
+    }
+}
 
 binmode( STDOUT, ':encoding(UTF-8)' );
 
@@ -55,6 +65,7 @@ else {
 our $relevant_banner = $q->param( 'relevant_banner' );
 
 my $sprints_and_koms = $q->param( 'sprints_and_koms' );
+# Note that order and duplicates are relevant here. Order denotes ZP IDs
 my @zp_sprints_koms = (
     'Main Sprint',
     'Box Hill',
@@ -63,16 +74,23 @@ my @zp_sprints_koms = (
     'Reverse KOM',
     'Forward KOM',
     'Reverse Sprint',
+    'Forward Sprint',
     'Volcano Climb',
     'Volcano Circuit',
     'Alpe du Zwift',
     'Jungle Circuit',
     'Forward Epic',
     'Reverse Epic',
+    'Volcano Circuit',
     'London Loop',
     'Fox Hill',
     'Leith Hill',
     'Keith Hill',
+    'Forward KOM',
+    'Forward Sprint',
+    'UCI Lap',
+    'Reverse Sprint',
+    'Reverse KOM',
     'UCI Lap',
     'Libby Hill',
     '23rd Street',
@@ -95,8 +113,12 @@ my @zp_sprints_koms = (
     'Yorkshire UCI Reverse',
     'Crit City Lap',
     'Crit City Sprint',
+    'Crit City Lap',
+    'Crit City Sprint',
+    'Reverse Sprint',
     'Reverse Sprint 2',
     'Reverse UCI',
+    'Reverse KOM',
     'Reverse 23rd Street',
     'Aqueduc KOM',
     'Petit KOM',
@@ -241,11 +263,8 @@ else {
             $full_row->{eliga_category} = resolve_category( $full_row );
             $full_row->{filtered_by_zwiftpower} = 1 unless exists $filtered{$normalized_name};
             my $eliga_category_position;
-            if ( not $full_row->{fin} and length $full_row->{club} ) {
+            if ( not $full_row->{fin} ) {
                 $full_row->{eliga_category_position} = 'DNF';
-            }
-            elsif ( length $full_row->{club} == 0 ) {
-                $full_row->{eliga_category_position} = 'UNCATEGORIZED';
             }
             # Do not require HRM for Juniors
             elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/
@@ -375,25 +394,30 @@ sub calculate_primes_points {
 sub resolve_category {
     my ($full_row) = @_;
 
-    if ( defined $full_row->{'kategorie (uci)'}
-        and ($full_row->{'kategorie (uci)'} eq 'YOUTH' and $full_row->{'kategorie national'} =~ /\bU1(3|5)\b/ ) ) {
-        return 'U15ujuenger';
-    }
-    elsif ( defined $full_row->{'kategorie (uci)'}
-        and ($full_row->{'kategorie (uci)'} eq 'JUNIORS' or $full_row->{'kategorie (uci)'} eq 'YOUTH' ) ) {
-        if ( $full_row->{'geschlecht'} eq 'M' ) {
-            return 'JUNIORS M';
+    my $sex = 'M';
+    $sex = 'W' unless $full_row->{'male'};
+
+    my $category;
+    if ( defined $full_row->{'kategorie (uci)'} ) {
+        if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ ) {
+            $category = $full_row->{'kategorie (uci)'};
+        }
+        elsif ( $full_row->{'kategorie (uci)'} eq 'MASTERS'
+            or $full_row->{'kategorie national'} eq 'STRASSE AMATEURE' ) {
+            $category = 'AMATEURE/MASTERS';
+        }
+        elsif ( $full_row->{'kategorie (uci)'} eq 'UNDER 23' ) {
+            $category = 'ELITE';
         }
         else {
-            return 'JUNIORS W';
+            $category = 'ELITE'; # Riders with UCI license but no rider license
         }
     }
-    elsif ( $full_row->{'male'} ) {
-        return 'ELITE M';
-    }
     else {
-        return 'ELITE W';
+        $category = 'BIKECARD';
     }
+
+    return sprintf('%s %s', $category, $sex);
 }
 
 sub record_to_row {
