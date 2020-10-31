@@ -20,10 +20,12 @@ my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.jso
 my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&zid=%d&_=' . localtime();
 my $zp_sprints_and_koms_url_pattern = 'https://zwiftpower.com/api3.php?do=event_sprints&zid=%d&_=' . localtime();
 
-# $CGI::Simple::DEBUG = 1;
-# $zp_live_url_pattern = "$ENV{BASE_PATH}697438_live.json";
-# $zp_filtered_url_pattern = "$ENV{BASE_PATH}697438_results.json";
-# $zp_sprints_and_koms_url_pattern = "$ENV{BASE_PATH}697438_event_sprints.json";
+if ( $ENV{DEBUG_BASE_PATH} ) {
+    $CGI::Simple::DEBUG = 1;
+    $zp_live_url_pattern = "$ENV{DEBUG_BASE_PATH}697438_live.json";
+    $zp_filtered_url_pattern = "$ENV{DEBUG_BASE_PATH}697438_results.json";
+    $zp_sprints_and_koms_url_pattern = "$ENV{DEBUG_BASE_PATH}697438_event_sprints.json";
+}
 
 my $aktive_licenses = 'AktiveLizenzen.csv';
 my $aktive_bikecards = 'AktiveBikecards.csv';
