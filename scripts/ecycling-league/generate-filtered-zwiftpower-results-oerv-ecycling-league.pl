@@ -38,7 +38,7 @@ binmode( STDOUT, ':encoding(UTF-8)' );
 my $q = CGI::Simple->new;
 my $zpid = $q->param( 'zpid' );
 
-# Depending on the type of race, we need to decide whether "finished" is coming from the live API endpoint with "fin:1" 
+# Depending on the type of race, we need to decide whether "finished" is coming from the live API endpoint with "fin:1"
 # or it is enough if a rider is the final ZP result list
 our $in_resultlist_is_finished = 1;
 
@@ -63,23 +63,16 @@ my @zp_sprints_koms = (
     'Reverse KOM',
     'Forward KOM',
     'Reverse Sprint',
-    'Forward Sprint',
     'Volcano Climb',
     'Volcano Circuit',
     'Alpe du Zwift',
     'Jungle Circuit',
     'Forward Epic',
     'Reverse Epic',
-    'Volcano Circuit',
     'London Loop',
     'Fox Hill',
     'Leith Hill',
     'Keith Hill',
-    'Forward KOM',
-    'Forward Sprint',
-    'UCI Lap',
-    'Reverse Sprint',
-    'Reverse KOM',
     'UCI Lap',
     'Libby Hill',
     '23rd Street',
@@ -102,13 +95,19 @@ my @zp_sprints_koms = (
     'Yorkshire UCI Reverse',
     'Crit City Lap',
     'Crit City Sprint',
-    'Crit City Lap',
-    'Crit City Sprint',
-    'Reverse Sprint',
     'Reverse Sprint 2',
     'Reverse UCI',
-    'Reverse KOM',
     'Reverse 23rd Street',
+    'Aqueduc KOM',
+    'Petit KOM',
+    'VenTop',
+    'Marina Sprint Rev',
+    'Pave Sprint Rev',
+    'Ballon Sprint',
+    'Aqueduc KOM Rev',
+    'Pave Sprint',
+    'Marina Sprint',
+    'Ballon Sprint Rev',
 );
 
 our @sprints_and_koms_ids;
