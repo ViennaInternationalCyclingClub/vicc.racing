@@ -31,6 +31,8 @@ my $aktive_licenses = 'AktiveLizenzen.csv';
 my $aktive_bikecards = 'AktiveBikecards.csv';
 my $realname_mapping_file = 'realname_mapping.csv';
 
+my @CATEGORY_POINTS = (210,180,160,145,158,123,114,106,99,93,88,83,79,75,72,69,66,63,61,59,57,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2);
+
 my @result_csv_field_order = (
     'eliga_category_position', 'position', 'last_name', 'first_name', 'zwift_category', 'eliga_category', 'kategorie national',
     'uciid', 'jahrgang', 'nationalität', 'club', 'race_time_formatted',
@@ -44,6 +46,8 @@ foreach my $sex (qw(M W)) {
         push(@result_csv_field_order, sprintf('sprints_and_koms_points-%s %s', $category, $sex));
     }
 }
+push(@result_csv_field_order, 'eliga_category_points');
+
 
 binmode( STDOUT, ':encoding(UTF-8)' );
 
@@ -281,10 +285,12 @@ else {
             if ( not defined $fastest_per_eliga_category{$full_row->{eliga_category}} and $full_row->{eliga_category_position} =~ /^\d+$/ ) {
                 $fastest_per_eliga_category{$full_row->{eliga_category}} = $full_row->{race_time};
                 $full_row->{eliga_finisher} = 1;
+                $full_row->{eliga_category_points} = $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] ? $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] : 1;
             }
             elsif ( $full_row->{eliga_category_position} =~ /^\d+$/ ) {
                 $full_row->{eliga_finisher} = 1;
                 $full_row->{eliga_category_timegap} = format_ms( $full_row->{race_time} - $fastest_per_eliga_category{$full_row->{eliga_category}} );
+                $full_row->{eliga_category_points} = $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] ? $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] : 1;
             }
 
             push @output_rows, $full_row;
