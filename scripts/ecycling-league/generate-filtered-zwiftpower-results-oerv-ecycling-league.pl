@@ -269,8 +269,11 @@ else {
             $full_row->{eliga_category} = resolve_category( $full_row );
             $full_row->{filtered_by_zwiftpower} = 1 unless exists $filtered{$normalized_name};
             my $eliga_category_position;
-            if ( not $full_row->{fin} ) {
+            if ( not $full_row->{fin} and length $full_row->{club} ) {
                 $full_row->{eliga_category_position} = 'DNF';
+            }
+            elsif ( length $full_row->{club} == 0 ) {
+                $full_row->{eliga_category_position} = 'UNCATEGORIZED';
             }
             # Do not require HRM for Juniors
             elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^JUNIORS/
