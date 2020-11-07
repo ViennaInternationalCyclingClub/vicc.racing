@@ -15,7 +15,7 @@ use Encode;
 use Number::Format;
 use List::MoreUtils qw(first_index);
 
-my $zp_live_url_pattern = 'https://zwiftpower.com/json.php?t=live&id=%d';
+my $zp_live_url_pattern = 'https://zwiftpower.com/cache3/live/results_%d.json?_=' . localtime();
 my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.json?_=' . localtime();
 my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&zid=%d&_=' . localtime();
 my $zp_sprints_and_koms_url_pattern = 'https://zwiftpower.com/api3.php?do=event_sprints&zid=%d&_=' . localtime();
