@@ -247,7 +247,9 @@ else {
 
             $full_row = {
                 %$full_row,
-                club => $bike_cards->{$normalized_name}->{'bike card'},
+                club => (defined $bike_cards->{$normalized_name}->{'Team'} and defined $bike_cards->{$normalized_name}->{'Team'})
+                    ? $bike_cards->{$normalized_name}->{'Team'}
+                    : $bike_cards->{$normalized_name}->{'bike card'},
                 'kategorie national' => $bike_cards->{$normalized_name}->{'bike card'},
                 last_name => $bike_cards->{$normalized_name}->{'nachname'},
                 first_name => $bike_cards->{$normalized_name}->{'vorname'},
