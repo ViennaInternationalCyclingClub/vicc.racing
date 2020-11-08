@@ -253,6 +253,7 @@ else {
                 'kategorie national' => $bike_cards->{$normalized_name}->{'bike card'},
                 last_name => $bike_cards->{$normalized_name}->{'nachname'},
                 first_name => $bike_cards->{$normalized_name}->{'vorname'},
+                jahrgang => $bike_cards->{$normalized_name}->{'jahrgang'},
             };
         }
         elsif ( $record->{flag} eq 'at' ) {
