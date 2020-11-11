@@ -235,11 +235,19 @@ else {
                 $normalized_name = $realname_mapping->{$record->{name}};
             }
 
+            my $club = $licenses->{$normalized_name}->{'team'};
+            $club ||= $licenses->{$normalized_name}->{'verein'};
+            # Allow to override club from licence for regional teams as registered for the league
+            if ( exists $nennungen->{$normalized_name} and defined $nennungen->{$normalized_name}->{'club'}
+                    and length $nennungen->{$normalized_name}->{'club'}
+                    and $nennungen->{$normalized_name}->{'club'} =~ /^LRV /
+                 ) {
+                $club = $nennungen->{$normalized_name}->{'club'};
+            }
+
             $full_row = {
                 %$full_row,
-                club => $licenses->{$normalized_name}->{'team'}
-                    ? $licenses->{$normalized_name}->{'team'}
-                    : $licenses->{$normalized_name}->{'verein'},
+                club => $club,
                 last_name => $licenses->{$normalized_name}->{'name'},
                 first_name => $licenses->{$normalized_name}->{'vorname'},
                 map { $_ => $licenses->{$normalized_name}->{$_} } @license_fields_to_add,
@@ -253,15 +261,34 @@ else {
                 $normalized_name = $realname_mapping->{$record->{name}};
             }
 
+            my $jahrgang = '';
+            if ( exists $nennungen->{$normalized_name} and defined $nennungen->{$normalized_name}->{'dob'} ) {
+                ($jahrgang) = ($nennungen->{$normalized_name}->{'dob'} =~ /\d\d\.\d\d\.(\d\d\d\d)/ );
+            }
+
             $full_row = {
                 %$full_row,
-                club => (defined $bike_cards->{$normalized_name}->{'team'} and length $bike_cards->{$normalized_name}->{'team'})
-                    ? $bike_cards->{$normalized_name}->{'team'}
+                club => (exists $nennungen->{$normalized_name} and defined $nennungen->{$normalized_name}->{'club'}
+                        and length $nennungen->{$normalized_name}->{'club'})
+                    ? $nennungen->{$normalized_name}->{'club'}
                     : $bike_cards->{$normalized_name}->{'bike card'},
                 'kategorie national' => $bike_cards->{$normalized_name}->{'bike card'},
                 last_name => $bike_cards->{$normalized_name}->{'nachname'},
                 first_name => $bike_cards->{$normalized_name}->{'vorname'},
-                jahrgang => $bike_cards->{$normalized_name}->{'jahrgang'},
+                jahrgang => $jahrgang,
+            };
+        }
+        elsif ( defined $nennungen->{$normalized_name} ) {
+            $full_row = record_to_row($record,$normalized_name,\%filtered);
+            $full_row = {
+                %$full_row,
+                club => $nennungen->{$normalized_name}->{'club'},
+                'kategorie (uci)' => 'ELITE',
+                last_name => $nennungen->{$normalized_name}->{'lastname'},
+                first_name => $nennungen->{$normalized_name}->{'firstname'},
+                jahrgang => ($nennungen->{$normalized_name}->{'dob'} =~ /\d\d\.\d\d\.(\d\d\d\d)/ ),
+                geschlecht => $nennungen->{$normalized_name}->{'sex'},
+                uciid => $nennungen->{$normalized_name}->{'licence'},
             };
         }
         elsif ( $record->{flag} eq 'at' ) {
