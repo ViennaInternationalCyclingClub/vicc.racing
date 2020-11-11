@@ -29,6 +29,7 @@ if ( $ENV{DEBUG_BASE_PATH} ) {
 
 my $aktive_licenses = 'AktiveLizenzen.csv';
 my $aktive_bikecards = 'AktiveBikecards.csv';
+my $eliga_nennungen = 'ELigaNennungen.csv';
 my $realname_mapping_file = 'realname_mapping.csv';
 
 my @CATEGORY_POINTS = (210,180,160,145,158,123,114,106,99,93,88,83,79,75,72,69,66,63,61,59,57,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2);
@@ -46,8 +47,7 @@ foreach my $sex (qw(M W)) {
         push(@result_csv_field_order, sprintf('sprints_and_koms_points-%s %s', $category, $sex));
     }
 }
-push(@result_csv_field_order, 'eliga_category_points');
-
+push(@result_csv_field_order, 'eliga_category_points', 'eliga_signed_up');
 
 binmode( STDOUT, ':encoding(UTF-8)' );
 
@@ -169,6 +169,14 @@ while (my $row = $csv->getline_hr($fh_b)) {
     $bike_cards->{normalize_name($row->{vorname} . ' ' . $row->{nachname})} = $row;
 }
 close $fh_b;
+
+my $nennungen;
+open my $fh_n, "<:encoding(utf8)", $eliga_nennungen or die "$eliga_nennungen: $!";
+$csv->header($fh_n);
+while (my $row = $csv->getline_hr($fh_n)) {
+    $nennungen->{normalize_name($row->{firstname} . ' ' . $row->{lastname})} = $row;
+}
+close $fh_n;
 
 my $realname_mapping;
 open my $fh_r, "<:encoding(utf8)", $realname_mapping_file or die "$realname_mapping_file: $!";
@@ -298,6 +306,8 @@ else {
                 $full_row->{eliga_category_timegap} = format_ms( $full_row->{race_time} - $fastest_per_eliga_category{$full_row->{eliga_category}} );
                 $full_row->{eliga_category_points} = $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] ? $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] : 1;
             }
+
+            $full_row->{eliga_signed_up} = exists $nennungen->{$normalized_name} ? 1 : 0;
 
             push @output_rows, $full_row;
         }
