@@ -297,7 +297,8 @@ else {
                 jahrgang => $jahrgang,
             };
         }
-        elsif ( defined $nennungen->{$normalized_name} ) {
+        elsif ( exists $nennungen->{$normalized_name} and defined $nennungen->{$normalized_name}->{licence}
+            and $nennungen->{$normalized_name}->{licence} =~ /^[0-9]{11}$/ ) {
             $full_row = record_to_row($record,$normalized_name,\%filtered);
             $full_row = {
                 %$full_row,
@@ -309,6 +310,11 @@ else {
                 geschlecht => $nennungen->{$normalized_name}->{'sex'},
                 uciid => $nennungen->{$normalized_name}->{'licence'},
             };
+
+            if ( exists $CATEGORY_FIXUP{$full_row->{'jahrgang'}} ) {
+                $full_row->{'kategorie (uci)'} = $CATEGORY_FIXUP{$full_row->{'jahrgang'}}->[1];
+            }
+
         }
         elsif ( $record->{flag} eq 'at' ) {
             $full_row = record_to_row($record,$normalized_name,\%filtered);
