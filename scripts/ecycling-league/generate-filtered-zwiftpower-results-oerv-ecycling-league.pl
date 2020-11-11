@@ -49,6 +49,18 @@ foreach my $sex (qw(M W)) {
 }
 push(@result_csv_field_order, 'eliga_category_points', 'eliga_signed_up');
 
+# For the league, next year's categories are used.
+my %CATEGORY_FIXUP = (
+    2008 => [ 'U15', 'YOUTH' ], # national, UCI
+    2007 => [ 'U15', 'YOUTH' ],
+    2006 => [ 'U17', 'YOUTH' ],
+    2005 => [ 'U17', 'YOUTH' ],
+    2004 => [ 'U19', 'JUNIORS' ],
+    2003 => [ 'U19', 'JUNIORS' ],
+    2002 => [ 'U23', 'U23' ],
+    1998 => [ 'ELITE', 'ELITE' ],
+);
+
 binmode( STDOUT, ':encoding(UTF-8)' );
 
 my $q = CGI::Simple->new;
@@ -252,6 +264,13 @@ else {
                 first_name => $licenses->{$normalized_name}->{'vorname'},
                 map { $_ => $licenses->{$normalized_name}->{$_} } @license_fields_to_add,
             };
+
+            if ( exists $CATEGORY_FIXUP{$licenses->{$normalized_name}->{'jahrgang'}} ) {
+                # TODO: Might need to differentiate between U19,Junioren and Juniorinnen
+                $full_row->{'kategorie national'} = $CATEGORY_FIXUP{$licenses->{$normalized_name}->{'jahrgang'}}->[0];
+                $full_row->{'kategorie (uci)'} = $CATEGORY_FIXUP{$licenses->{$normalized_name}->{'jahrgang'}}->[1];
+            }
+
         }
         elsif ( exists $bike_cards->{$normalized_name} or
              ( exists $realname_mapping->{$record->{name}} and exists $bike_cards->{$realname_mapping->{$record->{name}}}) ) {
