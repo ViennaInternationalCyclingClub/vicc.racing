@@ -477,7 +477,7 @@ sub resolve_category {
         if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ ) {
             $category = $full_row->{'kategorie (uci)'};
         }
-        elsif ( and  $full_row->{'kategorie national'} !~ /U13/ ) {
+        elsif ( $full_row->{'kategorie national'} ~ /U13/ ) {
             $category = 'UNCATEGORIZED';
         }
         elsif ( $full_row->{'kategorie (uci)'} eq 'MASTERS'
