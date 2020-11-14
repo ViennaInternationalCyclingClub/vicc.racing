@@ -32,7 +32,7 @@ my $aktive_bikecards = 'AktiveBikecards.csv';
 my $eliga_nennungen = 'ELigaNennungen.csv';
 my $realname_mapping_file = 'realname_mapping.csv';
 
-my @CATEGORY_POINTS = (210,180,160,145,158,123,114,106,99,93,88,83,79,75,72,69,66,63,61,59,57,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2);
+my @CATEGORY_POINTS = (210,180,160,145,133,123,114,106,99,93,88,83,79,75,72,69,66,63,61,59,57,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2);
 
 my @result_csv_field_order = (
     'eliga_category_position', 'last_name', 'first_name', 'eliga_category', 'kategorie national',
@@ -474,7 +474,7 @@ sub resolve_category {
 
     my $category;
     if ( defined $full_row->{'kategorie (uci)'} ) {
-        if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ ) {
+        if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ and  $full_row->{'kategorie national'} !~ /U13/ ) {
             $category = $full_row->{'kategorie (uci)'};
         }
         elsif ( $full_row->{'kategorie (uci)'} eq 'MASTERS'
@@ -563,7 +563,7 @@ sub fetch_json {
 sub normalize_name {
     my ($name) = @_;
 
-    my %charmap = ("ä" => "ae", "ü" => "ue", "ö" => "oe", "ß" => "ss" );
+    my %charmap = ("ä" => "ae", "ü" => "ue", "ö" => "oe", "ß" => "ss", "é" => 'e' );
     state $charmap_regex = join ("|", keys(%charmap));
     $name = lc decode_entities($name);
     $name =~ s/($charmap_regex)/$charmap{$1}/g;
