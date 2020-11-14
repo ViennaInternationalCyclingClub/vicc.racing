@@ -249,10 +249,9 @@ else {
 
             my $club = $licenses->{$normalized_name}->{'team'};
             $club ||= $licenses->{$normalized_name}->{'verein'};
-            # Allow to override club from licence for regional teams as registered for the league
+            # Allow to override club from licence to support cross-category teams
             if ( exists $nennungen->{$normalized_name} and defined $nennungen->{$normalized_name}->{'club'}
                     and length $nennungen->{$normalized_name}->{'club'}
-                    and $nennungen->{$normalized_name}->{'club'} =~ /^LRV /
                  ) {
                 $club = $nennungen->{$normalized_name}->{'club'};
             }
