@@ -474,7 +474,7 @@ sub resolve_category {
 
     my $category;
     if ( defined $full_row->{'kategorie (uci)'} ) {
-        if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ ) {
+        if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ and $full_row->{'kategorie national'} !~ /U13/ ) {
             $category = $full_row->{'kategorie (uci)'};
         }
         elsif ( $full_row->{'kategorie national'} =~ /U13/ ) {
