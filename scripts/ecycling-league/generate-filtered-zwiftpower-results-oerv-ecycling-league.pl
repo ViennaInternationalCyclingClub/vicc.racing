@@ -474,8 +474,11 @@ sub resolve_category {
 
     my $category;
     if ( defined $full_row->{'kategorie (uci)'} ) {
-        if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ and  $full_row->{'kategorie national'} !~ /U13/ ) {
+        if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ ) {
             $category = $full_row->{'kategorie (uci)'};
+        }
+        elsif ( and  $full_row->{'kategorie national'} !~ /U13/ ) {
+            $category = 'UNCATEGORIZED';
         }
         elsif ( $full_row->{'kategorie (uci)'} eq 'MASTERS'
             or $full_row->{'kategorie national'} eq 'STRASSE AMATEURE' ) {
