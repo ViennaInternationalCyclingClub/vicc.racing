@@ -327,6 +327,7 @@ else {
 
         if ( defined $full_row ) {
             $full_row->{normalized_name} = $normalized_name;
+            $full_row->{eliga_signed_up} = exists $nennungen->{$normalized_name} ? 1 : 0;
             $full_row->{full_name} = $full_row->{last_name} . ' ' . $full_row->{first_name};
             $full_row->{eliga_category} = resolve_category( $full_row );
             $full_row->{filtered_by_zwiftpower} = 1 unless exists $filtered{$normalized_name};
@@ -334,7 +335,7 @@ else {
             if ( not $full_row->{fin} and length $full_row->{club} ) {
                 $full_row->{eliga_category_position} = 'DNF';
             }
-            elsif ( length $full_row->{club} == 0 ) {
+            elsif ( length $full_row->{club} == 0 or not $full_row->{eliga_signed_up} ) {
                 $full_row->{eliga_category_position} = 'UNCATEGORIZED';
             }
             # Do not require HRM for Juniors
@@ -357,8 +358,6 @@ else {
                 $full_row->{eliga_category_timegap} = format_ms( $full_row->{race_time} - $fastest_per_eliga_category{$full_row->{eliga_category}} );
                 $full_row->{eliga_category_points} = $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] ? $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] : 1;
             }
-
-            $full_row->{eliga_signed_up} = exists $nennungen->{$normalized_name} ? 1 : 0;
 
             push @output_rows, $full_row;
         }
