@@ -82,6 +82,8 @@ else {
 }
 our $relevant_banner = $q->param( 'relevant_banner' );
 
+my $dsq = $q->param( 'dsq' );
+
 my $sprints_and_koms = $q->param( 'sprints_and_koms' );
 # Note that order and duplicates are relevant here. Order denotes ZP IDs
 my @zp_sprints_koms = (
@@ -158,6 +160,15 @@ if ( defined $sprints_and_koms ) {
         push( @sprints_and_koms_ids, $index + 1 ) if defined $index;
     }
 }
+
+our %to_be_dsqd;
+if ( defined $dsq ) {
+    my @to_be_dsqd_names = split(',', $dsq);
+    foreach my $name ( @to_be_dsqd_names ) {
+        $to_be_dsqd{$name} = 1;
+    }
+}
+
 
 my $csv = Text::CSV_XS->new( { auto_diag => 1, binary => 1 } );
 my $json = Cpanel::JSON::XS->new();
@@ -345,6 +356,10 @@ else {
                 $full_row->{eliga_category_position} = 'DSQ';
                 $full_row->{position} = 'DSQ';
             }
+            elsif ( exists $to_be_dsqd{$normalized_name} ) {
+                $full_row->{eliga_category_position} = 'DSQ';
+                $full_row->{position} = 'DSQ';
+            }
             else {
                 $full_row->{eliga_category_position} = ++$eliga_category_positions{$full_row->{eliga_category}};
             }
@@ -366,9 +381,12 @@ else {
     #print $q->header( -status => 200, -content_type => 'text/plain; charset=utf-8', -expires => '0' );
     print $q->header( -status => 200, -content_type => 'text/csv; charset=utf-8', -expires => '0', -content_disposition => 'inline; filename=results.csv', );
     $csv->say(*STDOUT, \@result_csv_field_order);
-    foreach my $row ( @output_rows ) {
+    foreach my $row ( grep { $_->{position} ne 'DSQ' } @output_rows ) {
         calculate_primes_points( \@output_rows, $row );
         calculate_sprints_koms_points( \@output_rows, $row );
+        $csv->say(*STDOUT, [( map {$row->{$_}} @result_csv_field_order)]);
+    }
+    foreach my $row ( grep { $_->{position} eq 'DSQ' } @output_rows ) {
         $csv->say(*STDOUT, [( map {$row->{$_}} @result_csv_field_order)]);
     }
 }
