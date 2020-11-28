@@ -426,7 +426,14 @@ sub _setup_sprints_and_koms {
     state $zwift_sprints_and_koms_results = fetch_json(sprintf($zp_sprints_and_koms_url_pattern, $zpid));
     state %all_eliga_riders_by_category;
     foreach my $rider ( @{$zwift_sprints_and_koms_results->{data}} ) {
-        my $current_rider = normalize_name($rider->{name});
+        my $current_rider;
+        if ( exists $realname_mapping->{$rider->{name}} ) {
+            $current_rider = $realname_mapping->{$rider->{name}};
+        }
+        else {
+            $current_rider = normalize_name($rider->{name});
+        }
+
         if ( exists $all_eliga_riders{$current_rider} and $all_eliga_riders{$current_rider}->{eliga_finisher} ) {
             $all_eliga_riders_by_category{$all_eliga_riders{$current_rider}->{eliga_category}}->{$current_rider} = $rider->{msec};
         }
@@ -465,7 +472,14 @@ sub calculate_primes_points {
         my $i = 0;
         foreach my $rider (@riders) {
             last if $i == scalar(@prime_points) - 1;
-            my $current_rider = normalize_name($relevant_banners[$prime-1]->{$rider}->{name});
+            my $current_rider;
+            if ( exists $realname_mapping->{$relevant_banners[$prime-1]->{$rider}->{name}} ) {
+                $current_rider = $realname_mapping->{$relevant_banners[$prime-1]->{$rider}->{name}};
+            }
+            else {
+                $current_rider = normalize_name($relevant_banners[$prime-1]->{$rider}->{name});
+            }
+
             if ( exists $all_eliga_riders{$current_rider} ) {
                 $eliga_riders_with_points{$current_rider} = $prime_points[$i++];
             }
@@ -490,7 +504,7 @@ sub resolve_category {
     $sex = 'W' unless $full_row->{'male'};
 
     my $category;
-    if ( defined $full_row->{'kategorie (uci)'} ) {
+    if ( defined $full_row->{'kategorie (uci)'} and defined $full_row->{'kategorie national'} ) {
         if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ and $full_row->{'kategorie national'} !~ /U13/ ) {
             $category = $full_row->{'kategorie (uci)'};
         }
