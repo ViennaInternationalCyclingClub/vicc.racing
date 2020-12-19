@@ -150,6 +150,10 @@ my @zp_sprints_koms = (
     'Pave Sprint',
     'Marina Sprint',
     'Ballon Sprint Rev',
+    'Champs-Élysées Lap',
+    'Champs-Élysées Sprint',
+    'Lutece Express Sprint',
+    'Lutece Express Lap',
 );
 
 our @sprints_and_koms_ids;
