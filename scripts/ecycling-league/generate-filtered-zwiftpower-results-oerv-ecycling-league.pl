@@ -469,10 +469,14 @@ sub calculate_primes_points {
 
     state $zwift_power_primes_results = fetch_json(sprintf($zp_primes_url_pattern, $zpid));
     my @relevant_banners = grep { $_->{name} eq $relevant_banner } @{$zwift_power_primes_results->{data}};
-    my @prime_points = qw(5 3 2 1);
+    my @prime_points = qw(10 6 4 2);
     my @riders = map { "rider_$_" } (1..10);
     my %eliga_riders_with_points;
+    my $processed_primes = 0;
     foreach my $prime ( @relevant_primes ) {
+        $processed_primes++;
+        my $points_factor = 1;
+        $points_factor *= 2 if $processed_primes == scalar @relevant_primes;
         my $i = 0;
         foreach my $rider (@riders) {
             last if $i == scalar(@prime_points) - 1;
@@ -485,7 +489,7 @@ sub calculate_primes_points {
             }
 
             if ( exists $all_eliga_riders{$current_rider} ) {
-                $eliga_riders_with_points{$current_rider} = $prime_points[$i++];
+                $eliga_riders_with_points{$current_rider} = $prime_points[$i++] * $points_factor;
             }
         }
     }
