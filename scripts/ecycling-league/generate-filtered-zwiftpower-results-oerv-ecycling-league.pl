@@ -17,14 +17,15 @@ use List::MoreUtils qw(first_index);
 
 my $zp_live_url_pattern = 'https://zwiftpower.com/cache3/live/results_%d.json?_=' . localtime();
 my $zp_filtered_url_pattern = 'https://zwiftpower.com/cache3/results/%d_view.json?_=' . localtime();
-my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&zid=%d&_=' . localtime();
 my $zp_sprints_and_koms_url_pattern = 'https://zwiftpower.com/api3.php?do=event_sprints&zid=%d&_=' . localtime();
+my $zp_primes_url_pattern = 'https://www.zwiftpower.com/api3.php?do=event_primes&category=%s&prime_type=msec&zid=%d&_=' . localtime();
 
 if ( $ENV{DEBUG_BASE_PATH} ) {
     $CGI::Simple::DEBUG = 1;
     $zp_live_url_pattern = "$ENV{DEBUG_BASE_PATH}697438_live.json";
     $zp_filtered_url_pattern = "$ENV{DEBUG_BASE_PATH}697438_results.json";
     $zp_sprints_and_koms_url_pattern = "$ENV{DEBUG_BASE_PATH}697438_event_sprints.json";
+    $zp_primes_url_pattern = "$ENV{DEBUG_BASE_PATH}697438_event_primes_%s.json";
 }
 
 my $aktive_licenses = 'AktiveLizenzen.csv';
@@ -133,8 +134,8 @@ my @zp_sprints_koms = (
     'Yorkshire UCI Reverse',
     'Crit City Lap',
     'Crit City Sprint',
-    'Crit City Lap',
-    'Crit City Sprint',
+    'Crit City Dolphin Lap',
+    'Crit City Dolphin Sprint',
     'Reverse Sprint',
     'Reverse Sprint 2',
     'Reverse UCI',
@@ -172,7 +173,6 @@ if ( defined $dsq ) {
         $to_be_dsqd{$name} = 1;
     }
 }
-
 
 my $csv = Text::CSV_XS->new( { auto_diag => 1, binary => 1 } );
 my $json = Cpanel::JSON::XS->new();
@@ -455,6 +455,7 @@ sub _setup_sprints_and_koms {
     return \%riders_per_category_sorted;
 }
 
+my %eliga_riders_with_points;
 sub calculate_primes_points {
     my ($all_rows, $full_row) = @_;
 
@@ -467,39 +468,42 @@ sub calculate_primes_points {
         $all_eliga_riders{$row->{normalized_name}} = $row if defined $row->{eliga_category};
     }
 
-    state $zwift_power_primes_results = fetch_json(sprintf($zp_primes_url_pattern, $zpid));
-    my @relevant_banners = grep { $_->{name} eq $relevant_banner } @{$zwift_power_primes_results->{data}};
-    my @prime_points = qw(10 6 4 2);
-    my @riders = map { "rider_$_" } (1..10);
-    my %eliga_riders_with_points;
-    my $processed_primes = 0;
-    foreach my $prime ( @relevant_primes ) {
-        $processed_primes++;
-        my $points_factor = 1;
-        $points_factor *= 2 if $processed_primes == scalar @relevant_primes;
-        my $i = 0;
-        foreach my $rider (@riders) {
-            last if $i == scalar(@prime_points) - 1;
-            my $current_rider;
-            if ( exists $realname_mapping->{$relevant_banners[$prime-1]->{$rider}->{name}} ) {
-                $current_rider = $realname_mapping->{$relevant_banners[$prime-1]->{$rider}->{name}};
-            }
-            else {
-                $current_rider = normalize_name($relevant_banners[$prime-1]->{$rider}->{name});
-            }
+    if ( not scalar keys %eliga_riders_with_points ) {
+        foreach my $cat (qw(A B C)) {
+            my $zwift_power_primes_results = fetch_json(sprintf($zp_primes_url_pattern, $cat, $zpid));
+            my @relevant_banners = grep { $_->{name} eq $relevant_banner } @{$zwift_power_primes_results->{data}};
+            my @prime_points = qw(10 6 4 2);
+            my @riders = map { "rider_$_" } (1..10);
+            my $processed_primes = 0;
+            foreach my $prime ( @relevant_primes ) {
+                $processed_primes++;
+                my $points_factor = 1;
+                $points_factor *= 2 if $processed_primes == scalar @relevant_primes;
+                $points_factor *= 2 if ($cat eq 'C' and $processed_primes == 2);
+                my $i = 0;
+                foreach my $rider (@riders) {
+                    last if $i == scalar(@prime_points) - 1;
+                    last unless exists $relevant_banners[$prime-1];
+                    my $current_rider;
+                    if ( exists $realname_mapping->{$relevant_banners[$prime-1]->{$rider}->{name}} ) {
+                        $current_rider = $realname_mapping->{$relevant_banners[$prime-1]->{$rider}->{name}};
+                    }
+                    else {
+                        $current_rider = normalize_name($relevant_banners[$prime-1]->{$rider}->{name});
+                    }
 
-            if ( exists $all_eliga_riders{$current_rider} ) {
-                $eliga_riders_with_points{$current_rider} = $prime_points[$i++] * $points_factor;
+                    if ( exists $all_eliga_riders{$current_rider} ) {
+                        $eliga_riders_with_points{$current_rider} += $prime_points[$i++] * $points_factor;
+                    }
+                }
             }
         }
     }
 
-    my @sorted_riders = reverse sort { $eliga_riders_with_points{$a} <=> $eliga_riders_with_points{$b} } keys %eliga_riders_with_points;
-    if ( $sorted_riders[0] eq $full_row->{normalized_name} ) {
-        $full_row->{primes_points} = $primes_bonus_points;
-    }
-    else {
-        $full_row->{primes_points} = 0;
+    foreach my $normalized_name ( keys %eliga_riders_with_points ) {
+        if ( $full_row->{normalized_name} eq $normalized_name ) {
+            $full_row->{primes_points} = $eliga_riders_with_points{$normalized_name};
+        }
     }
 
     return 1;
