@@ -84,6 +84,7 @@ else {
 our $relevant_banner = $q->param( 'relevant_banner' );
 
 my $dsq = $q->param( 'dsq' );
+my $ignore_live_results = $q->param( 'ignore_live_results' );
 
 my $sprints_and_koms = $q->param( 'sprints_and_koms' );
 # Note that order and duplicates are relevant here. Order denotes ZP IDs
@@ -136,7 +137,7 @@ my @zp_sprints_koms = (
     'Crit City Sprint',
     'Crit City Dolphin Lap',
     'Crit City Dolphin Sprint',
-    'Reverse Sprint',
+    'Richmond Reverse Sprint',
     'Reverse Sprint 2',
     'Reverse UCI',
     'Reverse KOM',
@@ -237,8 +238,8 @@ else {
 
     my $zwift_power_results = fetch_json($json_url);
     my $zwift_power_results_filtered = fetch_json($json_filtered_url);
-    # some races *may* not have live results. Fallback to the filtered ones in case
-    if ( not defined $zwift_power_results ) {
+    # some races *may* not have (current) live results. Fallback to the filtered ones in case
+    if ( $ignore_live_results or not defined $zwift_power_results ) {
         $zwift_power_results = $zwift_power_results_filtered;
     }
     my %filtered;
