@@ -85,6 +85,7 @@ our $relevant_banner = $q->param( 'relevant_banner' );
 
 my $dsq = $q->param( 'dsq' );
 my $ignore_live_results = $q->param( 'ignore_live_results' );
+my $jedermensch = $q->param( 'jedermensch' );
 
 my $sprints_and_koms = $q->param( 'sprints_and_koms' );
 # Note that order and duplicates are relevant here. Order denotes ZP IDs
@@ -340,6 +341,7 @@ else {
                 first_name => '',
             };
         }
+        $full_row->{zp_category} = $record->{category};
 
         if ( defined $full_row ) {
             $full_row->{normalized_name} = $normalized_name;
@@ -351,11 +353,11 @@ else {
             if ( not $full_row->{fin} and length $full_row->{club} ) {
                 $full_row->{eliga_category_position} = 'DNF';
             }
-            elsif ( length $full_row->{club} == 0 or not $full_row->{eliga_signed_up} ) {
-                $full_row->{eliga_category_position} = 'UNCATEGORIZED';
-            }
+            # elsif ( length $full_row->{club} == 0 or not $full_row->{eliga_signed_up} ) {
+            #     $full_row->{eliga_category_position} = 'UNCATEGORIZED';
+            # }
             # Do not require HRM for Juniors
-            elsif ( not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^YOUTH/
+            elsif ( not $jedermensch and not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^YOUTH/
                 # white-list riders which proved they actually have ridden with HR data
                 and not $full_row->{normalized_name} =~ /(konczer|gratzer|janecka|brunhofer|daniel hager|moertl|hnilica)/ ) {
                 $full_row->{eliga_category_position} = 'DSQ';
@@ -378,6 +380,13 @@ else {
                 $full_row->{eliga_category_timegap} = format_ms( $full_row->{race_time} - $fastest_per_eliga_category{$full_row->{eliga_category}} );
                 $full_row->{eliga_category_points} = $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] ? $CATEGORY_POINTS[$full_row->{eliga_category_position}-1] : 1;
             }
+
+            if ( $jedermensch ) {
+                my $zp_name = decode_entities(Encode::decode_utf8($record->{name}));
+                $zp_name =~ s/[0-9\(\[].+$//g;
+                $zp_name =~ s/\W+$//g;
+                $full_row->{last_name} = $zp_name;
+             }
 
             push @output_rows, $full_row;
         }
@@ -538,6 +547,8 @@ sub resolve_category {
     else {
         $category = 'BIKECARD';
     }
+
+    $category = $full_row->{'zp_category'} if $jedermensch;
 
     return sprintf('%s %s', $category, $sex);
 }
