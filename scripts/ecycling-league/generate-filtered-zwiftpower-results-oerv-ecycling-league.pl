@@ -363,9 +363,9 @@ else {
             if ( not $full_row->{fin} and length $full_row->{club} ) {
                 $full_row->{eliga_category_position} = 'DNF';
             }
-            # elsif ( length $full_row->{club} == 0 or not $full_row->{eliga_signed_up} ) {
-            #     $full_row->{eliga_category_position} = 'UNCATEGORIZED';
-            # }
+            elsif ( (length $full_row->{club} == 0 or not $full_row->{eliga_signed_up}) and not $jedermensch ) {
+                $full_row->{eliga_category_position} = 'UNCATEGORIZED';
+            }
             # Do not require HRM for Juniors
             elsif ( not $jedermensch and not $full_row->{avg_hr} and not $full_row->{eliga_category} =~ /^YOUTH/
                 # white-list riders which proved they actually have ridden with HR data
