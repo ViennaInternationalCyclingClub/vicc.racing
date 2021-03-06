@@ -313,25 +313,25 @@ else {
                 jahrgang => $jahrgang,
             };
         }
-        elsif ( exists $nennungen->{$normalized_name} and defined $nennungen->{$normalized_name}->{licence}
-            and $nennungen->{$normalized_name}->{licence} =~ /^[0-9]{11}$/ ) {
-            $full_row = record_to_row($record,$normalized_name,\%filtered);
-            $full_row = {
-                %$full_row,
-                club => $nennungen->{$normalized_name}->{'club'},
-                'kategorie (uci)' => 'ELITE',
-                last_name => $nennungen->{$normalized_name}->{'lastname'},
-                first_name => $nennungen->{$normalized_name}->{'firstname'},
-                jahrgang => ($nennungen->{$normalized_name}->{'dob'} =~ /\d\d\.\d\d\.(\d\d\d\d)/ ),
-                geschlecht => $nennungen->{$normalized_name}->{'sex'},
-                uciid => $nennungen->{$normalized_name}->{'licence'},
-            };
+        # elsif ( exists $nennungen->{$normalized_name} and defined $nennungen->{$normalized_name}->{licence}
+        #     and $nennungen->{$normalized_name}->{licence} =~ /^[0-9]{11}$/ ) {
+        #     $full_row = record_to_row($record,$normalized_name,\%filtered);
+        #     $full_row = {
+        #         %$full_row,
+        #         club => $nennungen->{$normalized_name}->{'club'},
+        #         'kategorie (uci)' => 'ELITE',
+        #         last_name => $nennungen->{$normalized_name}->{'lastname'},
+        #         first_name => $nennungen->{$normalized_name}->{'firstname'},
+        #         jahrgang => ($nennungen->{$normalized_name}->{'dob'} =~ /\d\d\.\d\d\.(\d\d\d\d)/ ),
+        #         geschlecht => $nennungen->{$normalized_name}->{'sex'},
+        #         uciid => $nennungen->{$normalized_name}->{'licence'},
+        #     };
 
-            if ( exists $CATEGORY_FIXUP{$full_row->{'jahrgang'}} ) {
-                $full_row->{'kategorie (uci)'} = $CATEGORY_FIXUP{$full_row->{'jahrgang'}}->[1];
-            }
+        #     if ( exists $CATEGORY_FIXUP{$full_row->{'jahrgang'}} ) {
+        #         $full_row->{'kategorie (uci)'} = $CATEGORY_FIXUP{$full_row->{'jahrgang'}}->[1];
+        #     }
 
-        }
+        # }
         elsif ( $record->{flag} eq 'at' ) {
             $full_row = record_to_row($record,$normalized_name,\%filtered);
             $full_row = {
