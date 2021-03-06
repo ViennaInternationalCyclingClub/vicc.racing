@@ -384,7 +384,7 @@ else {
 
             if ( $jedermensch ) {
                 my $zp_name = decode_entities(Encode::decode_utf8($record->{name}));
-                $zp_name =~ s/[0-9\(\[].+$//g;
+                $zp_name =~ s/[0-9\(\[\|\-@#].+$//g;
                 $zp_name =~ s/\W+$//g;
                 $zp_name =~ s/\s+/ /g;
                 $full_row->{last_name} = $zp_name;
