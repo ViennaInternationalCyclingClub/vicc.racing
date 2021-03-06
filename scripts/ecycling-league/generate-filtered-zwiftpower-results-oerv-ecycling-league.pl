@@ -342,6 +342,7 @@ else {
             };
         }
         $full_row->{zp_category} = $record->{category};
+        $full_row->{zp_sex} = $record->{male} ? 'M' : 'W';
 
         if ( defined $full_row ) {
             $full_row->{normalized_name} = $normalized_name;
@@ -385,6 +386,7 @@ else {
                 my $zp_name = decode_entities(Encode::decode_utf8($record->{name}));
                 $zp_name =~ s/[0-9\(\[].+$//g;
                 $zp_name =~ s/\W+$//g;
+                $zp_name =~ s/\s+/ /g;
                 $full_row->{last_name} = $zp_name;
              }
 
@@ -522,9 +524,6 @@ sub calculate_primes_points {
 sub resolve_category {
     my ($full_row) = @_;
 
-    my $sex = 'M';
-    $sex = 'W' unless $full_row->{'male'};
-
     my $category;
     if ( defined $full_row->{'kategorie (uci)'} and defined $full_row->{'kategorie national'} ) {
         if ( $full_row->{'kategorie (uci)'} =~ /\A(?:ELITE|JUNIORS|YOUTH)\z/ and $full_row->{'kategorie national'} !~ /U13/ ) {
@@ -550,7 +549,7 @@ sub resolve_category {
 
     $category = $full_row->{'zp_category'} if $jedermensch;
 
-    return sprintf('%s %s', $category, $sex);
+    return sprintf('%s %s', $category, $full_row->{'zp_sex'});
 }
 
 sub record_to_row {
