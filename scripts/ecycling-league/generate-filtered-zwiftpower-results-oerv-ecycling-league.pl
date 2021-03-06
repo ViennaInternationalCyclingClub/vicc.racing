@@ -341,6 +341,15 @@ else {
                 first_name => '',
             };
         }
+        elsif ( $jedermensch ) {
+            $full_row = record_to_row($record,$normalized_name,\%filtered);
+            $full_row = {
+                %$full_row,
+                club => '',
+                last_name => decode_entities($full_row->{name}),
+                first_name => '',
+            };
+        }
         $full_row->{zp_category} = $record->{category};
         $full_row->{zp_sex} = $record->{male} ? 'M' : 'W';
 
