@@ -44,7 +44,6 @@ my @base_activity_fields = qw(id name total_elevation_gain average_temp suffer_s
     average_watts moving_time elapsed_time start_date_local distance
     start_latitude start_longitude type photo_count commute);
 
-# 'AIzaSyBxmWhYbqMf-QQ8EkVXO60XIotUy3mhlOM'
 my $geocoder = Geo::Coder::Google->new(apiver => 3, apikey => $opts{apikey} );
 my $field_calculations = {
     'start_geocoded_coordinates' => sub {
