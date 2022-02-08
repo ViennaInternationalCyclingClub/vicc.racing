@@ -90,7 +90,7 @@ while (my $fn = readdir($dirfh)) {
 
     my $activity_count = 0;
     foreach my $activity (@$activities) {
-        next unless $activity->{name} =~ /$challenge_activity_title_re/;
+        #next unless $activity->{name} =~ /$challenge_activity_title_re/;
         $csv->say($fh, activity_to_row($athlete, $activity));
         $activity_count++;
     }
