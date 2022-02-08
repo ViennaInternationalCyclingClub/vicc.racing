@@ -122,11 +122,15 @@ sub activity_to_row {
     }
 
     my ($claimed_challenges) = ( $activity->{name} =~ /$challenge_activity_title_re/ );
-    $claimed_challenges =~ s/\s+/ /;
-    my %claims;
-    map { $claims{$_} = 1 } split(/[, ]/, $claimed_challenges);
-    foreach my $i (1..$challenge_count) {
-        push @$row, $claims{$i} ? 1: 0;
+    ($claimed_challenges) = ( $activity->{description} =~ /$challenge_activity_title_re/ )
+        unless defined $claimed_challenges;
+    if ( defined $claimed_challenges ) {
+        $claimed_challenges =~ s/\s+/ /;
+        my %claims;
+        map { $claims{$_} = 1 } split(/[, ]/, $claimed_challenges);
+        foreach my $i (1..$challenge_count) {
+            push @$row, $claims{$i} ? 1: 0;
+        }
     }
 
     return $row;
