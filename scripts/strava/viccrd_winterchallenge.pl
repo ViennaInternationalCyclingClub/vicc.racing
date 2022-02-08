@@ -42,7 +42,7 @@ my $after_epoch = strptime('%F',$activity_window_after_datetime)->epoch();
 my $challenge_activity_title_re = qr/viccrd winter challenge ([0-9, ]+)/i;
 my @base_activity_fields = qw(id name total_elevation_gain average_temp suffer_score
     average_watts moving_time elapsed_time start_date_local distance
-    start_latitude start_longitude type photo_count commute);
+    start_latitude start_longitude type photo_count commute description);
 
 my $geocoder = Geo::Coder::Google->new(apiver => 3, apikey => $opts{apikey} );
 my $field_calculations = {
