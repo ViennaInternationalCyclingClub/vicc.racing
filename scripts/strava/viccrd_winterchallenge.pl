@@ -123,7 +123,7 @@ sub activity_to_row {
 
     my ($claimed_challenges) = ( $activity->{name} =~ /$challenge_activity_title_re/ );
     ($claimed_challenges) = ( $activity->{description} =~ /$challenge_activity_title_re/ )
-        unless defined $claimed_challenges;
+        if ( not(defined $claimed_challenges) and defined $activity->{description} );
     if ( defined $claimed_challenges ) {
         $claimed_challenges =~ s/\s+/ /;
         my %claims;
