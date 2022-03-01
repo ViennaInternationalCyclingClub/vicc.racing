@@ -84,7 +84,7 @@ while (my $fn = readdir($dirfh)) {
       config_file => $tokenfile,
     );
     my $strava = WebService::Strava->new( auth => $auth );
-    my $activities = $strava->auth->get_api("/athlete/activities?after=$after_epoch&before=$before_epoch");
+    my $activities = $strava->auth->get_api("/athlete/activities?after=$after_epoch&before=$before_epoch&per_page=99");
     my $athlete = $strava->athlete();
     my $athlete_identifier = sprintf("%s %s", $athlete->{firstname}, $athlete->{lastname});
 
