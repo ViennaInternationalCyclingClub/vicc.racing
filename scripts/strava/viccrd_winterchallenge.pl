@@ -65,7 +65,7 @@ my $activity_header_row = [ 'athlete_name', 'athlete_id', @base_activity_fields,
 my ($fh, $filename) = tempfile( TEMPLATE => 'viccrd-winterchallenge-202202-XXXXX', SUFFIX => '.csv', TMPDIR => 1, CLEANUP => 0 );
 binmode $fh, ":encoding(utf8)";
 
-my $csv = Text::CSV_XS->new();
+my $csv = Text::CSV_XS->new({ auto_diag => 1, binary => 1});
 $csv->say($fh, $activity_header_row);
 
 if ( ! -d $opts{tokendir} ) {
@@ -115,7 +115,7 @@ sub activity_to_row {
     my $row = [
         $athlete->{firstname} . ' ' . $athlete->{lastname},
         $athlete->{id},
-        map { $activity->{$_} } @base_activity_fields,
+        map { $_ =~ /name|description/ ? _sanitize_text($activity->{$_}) : $activity->{$_} } @base_activity_fields,
     ];
     foreach my $calculated_field ( @calculated_fields ) {
         push @$row, $field_calculations->{$calculated_field}($activity);
@@ -134,6 +134,15 @@ sub activity_to_row {
     }
 
     return $row;
+}
+
+sub _sanitize_text {
+    my ($text) = @_;
+
+    return '' unless defined $text;
+
+    $text =~ s/\P{XPosixPrint}\t\r\n/ /g;
+    return $text;
 }
 
 # Monkeypatch to support CSV-Google Spreadsheet conversion
