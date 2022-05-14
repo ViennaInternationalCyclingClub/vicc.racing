@@ -13,6 +13,7 @@ use DateTime;
 use DateTime::Format::Strptime 'strptime';
 use Getopt::Long;
 use Encode qw(decode encode);
+use Text::Levenshtein qw(distance);
 
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
@@ -137,7 +138,13 @@ foreach my $race (@{$content->{values}}) {
     my @sorted_activites = reverse sort { $a->{suffer_score} <=> $b->{suffer_score} } @$activities;
 
     printf("\tMost likely race: %s\n", $sorted_activites[0]->{name});
-    printf("\tRace name '%s' does not match!\n", $sorted_activites[0]->{name}) if $sorted_activites[0]->{name} !~ /$race->[$race_column_lookup{'Race Title'}]/;
+    if ( distance($sorted_activites[0]->{name}, $race->[$race_column_lookup{'Race Title'}], {ignore_diacritics => 1}) > 5 ) {
+        printf("\tActivity name '%s' is quite distant from the race calendar name.\n", $sorted_activites[0]->{name});
+    }
+    elsif ( $sorted_activites[0]->{name} !~ /$race->[$race_column_lookup{'Race Title'}]/ ) {
+        printf("\tActivity name '%s' is similar but does not contain race calendar name.\n", $sorted_activites[0]->{name});
+    }
+
     foreach my $col ( @strava_activity_columns ) {
         push @race_activity_row, $sorted_activites[0]->{$col};
     }
