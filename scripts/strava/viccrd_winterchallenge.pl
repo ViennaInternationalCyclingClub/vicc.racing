@@ -25,7 +25,7 @@ die "Need apikey and tokendir parameters\n" unless ($opts{apikey} and $opts{toke
 
 my $json = Cpanel::JSON::XS->new;
 
-my $activity_window_after_datetime = '2022-01-31';
+my $activity_window_after_datetime = '2022-02-01'; # apparently starting with 00:00:00 (inclusive)
 my $activity_window_before_datetime = '2022-03-01';
 my $before_epoch = strptime('%F',$activity_window_before_datetime)->epoch();
 my $after_epoch = strptime('%F',$activity_window_after_datetime)->epoch();
@@ -39,10 +39,10 @@ my $after_epoch = strptime('%F',$activity_window_after_datetime)->epoch();
 #     }
 # }
 
-my $challenge_activity_title_re = qr/viccrd winter challenge ([0-9, ]+)/i;
+my $challenge_activity_title_re = qr/viccrd winter challenge,?([0-9,+# ]+)/i;
 my @base_activity_fields = qw(id name total_elevation_gain average_temp suffer_score
     average_watts moving_time elapsed_time start_date_local distance
-    start_latitude start_longitude type photo_count commute description);
+    start_latitude start_longitude type photo_count commute);
 
 my $geocoder = Geo::Coder::Google->new(apiver => 3, apikey => $opts{apikey} );
 my $field_calculations = {
@@ -60,7 +60,7 @@ my @calculated_fields = keys %$field_calculations;
 my $challenge_count = 15;
 my @claimed_challenge_fields = map { "claimed_challenge_$_" } (1..$challenge_count);
 
-my $activity_header_row = [ 'athlete_name', 'athlete_id', @base_activity_fields, @calculated_fields, @claimed_challenge_fields ];
+my $activity_header_row = [ 'athlete_name', 'athlete_id', @base_activity_fields, @calculated_fields, 'description', @claimed_challenge_fields ];
 
 my ($fh, $filename) = tempfile( TEMPLATE => 'viccrd-winterchallenge-202202-XXXXX', SUFFIX => '.csv', TMPDIR => 1, CLEANUP => 0 );
 binmode $fh, ":encoding(utf8)";
@@ -91,7 +91,7 @@ while (my $fn = readdir($dirfh)) {
     my $activity_count = 0;
     foreach my $activity (@$activities) {
         #next unless $activity->{name} =~ /$challenge_activity_title_re/;
-        $csv->say($fh, activity_to_row($athlete, $activity));
+        $csv->say($fh, activity_to_row($athlete, $activity, $strava));
         $activity_count++;
     }
     warn sprintf("Got %d challenge activities from athlete '%s'\n", $activity_count, $athlete_identifier);
@@ -110,21 +110,30 @@ else {
 }
 
 sub activity_to_row {
-    my ($athlete, $activity) = @_;
+    my ($athlete, $activity, $strava) = @_;
 
     my $row = [
         $athlete->{firstname} . ' ' . $athlete->{lastname},
         $athlete->{id},
-        map { $_ =~ /name|description/ ? _sanitize_text($activity->{$_}) : $activity->{$_} } @base_activity_fields,
+        map { $_ =~ /name/ ? _sanitize_text($activity->{$_}) : $activity->{$_} } @base_activity_fields,
     ];
     foreach my $calculated_field ( @calculated_fields ) {
         push @$row, $field_calculations->{$calculated_field}($activity);
     }
 
+    my $description = '';
     my ($claimed_challenges) = ( $activity->{name} =~ /$challenge_activity_title_re/ );
-    ($claimed_challenges) = ( $activity->{description} =~ /$challenge_activity_title_re/ )
-        if ( not(defined $claimed_challenges) and defined $activity->{description} );
+    if ( not defined $claimed_challenges ) {
+        my $activity_detail = $strava->auth->get_api("/activities/".$activity->{id});
+        if ( defined $activity_detail and defined $activity_detail->{description} ) {
+            $description = _sanitize_text($activity_detail->{description});
+            ($claimed_challenges) = ( $description =~ /$challenge_activity_title_re/ );
+        }
+    }
+   push @$row, $description;
     if ( defined $claimed_challenges ) {
+        $claimed_challenges =~ s/#//g;
+        $claimed_challenges =~ s/\+/,/;
         $claimed_challenges =~ s/\s+/ /;
         my %claims;
         map { $claims{$_} = 1 } split(/[, ]/, $claimed_challenges);
