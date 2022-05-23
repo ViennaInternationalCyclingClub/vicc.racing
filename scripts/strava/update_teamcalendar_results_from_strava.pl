@@ -146,7 +146,11 @@ foreach my $race (@{$content->{values}}) {
     }
 
     foreach my $col ( @strava_activity_columns ) {
-        push @race_activity_row, $sorted_activites[0]->{$col};
+        my $value = $sorted_activites[0]->{$col};
+        if ( $col eq 'distance' or $col eq 'strava_average_watts' or $col eq 'strava_total_elevation_gain' ) {
+            $value = int($value + 0.5);
+        }
+        push @race_activity_row, $value;
     }
 
     my $sheet = $gs->get_sheet(title => $target_spreadsheet_name);
