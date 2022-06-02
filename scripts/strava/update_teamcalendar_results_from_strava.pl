@@ -128,15 +128,20 @@ foreach my $race (@{$content->{values}}) {
 
     my $strava = WebService::Strava->new( auth => $auth );
     my $activities = $strava->auth->get_api(sprintf("/athlete/activities?after=%s&before=%s", $start_date->epoch, $end_date->add( days => 1)->epoch));
-    next unless scalar @$activities;
+    next unless defined $activities;
+    if ( ref $activities ne 'ARRAY' ) {
+        warn "Error: " . $activities->{message};
+        next;
+    }
+
     my $athlete = $strava->athlete();
     my $athlete_identifier = sprintf("%s %s", $athlete->{firstname}, $athlete->{lastname});
 
     my @race_activity_row;
-    # Assuming the activity with the highest suffer score of the day to be the race activity
-    my @sorted_activites = reverse sort { $a->{suffer_score} <=> $b->{suffer_score} } @$activities;
-
+    # Assuming the activity with the highest suffer score/weighted watts of the day to be the race activity
+    my @sorted_activites = reverse sort { $a->{suffer_score} ? $a->{suffer_score} <=> $b->{suffer_score} : $a->{weighted_average_watts} <=> $b->{weighted_average_watts} } @$activities;
     printf("\tMost likely race: %s\n", $sorted_activites[0]->{name});
+
     if ( distance($sorted_activites[0]->{name}, $race->[$race_column_lookup{'Race Title'}], {ignore_diacritics => 1}) > 5 ) {
         printf("\tActivity name '%s' is quite distant from the race calendar name.\n", $sorted_activites[0]->{name});
     }
