@@ -151,7 +151,7 @@ foreach my $race (@{$content->{values}}) {
 
     foreach my $col ( @strava_activity_columns ) {
         my $value = $sorted_activites[0]->{$col};
-        if ( $col eq 'distance' or $col eq 'strava_average_watts' or $col eq 'strava_total_elevation_gain' ) {
+        if ( $value =~ /^[0-9.]+$/ ) {
             $value = int($value + 0.5);
         }
         push @race_activity_row, $value;
