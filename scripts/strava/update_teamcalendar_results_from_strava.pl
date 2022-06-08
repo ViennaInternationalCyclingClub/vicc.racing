@@ -40,9 +40,9 @@ my $target_spreadsheet_name = $opts{target_spreadsheet_name};
 $target_spreadsheet_name ||= 'RaceParticipations';
 
 my @rider_columns = qw(ID Name Nickname ZP-FTP-Category StravaID ZwiftPowerID);
-my @race_columns = ('Rider ID','Race ID','Race Start Date','Race Title','Rider','StravaID','StartDateISO8661','EndDateISO8661');
+my @race_columns = ('Rider ID','Race ID','Race Start Date','Race Title','Sortable Combined Race Title','Rider','StravaID','StartDateISO8661','EndDateISO8661');
 my @strava_activity_columns = qw(id name total_elevation_gain suffer_score average_watts weighted_average_watts max_watts moving_time elapsed_time start_date_local distance);
-my $strava_gsheet_column_index_start = 10;
+my $strava_gsheet_column_index_start = 11;
 
 my %rider_column_lookup;
 my $i = 0;
