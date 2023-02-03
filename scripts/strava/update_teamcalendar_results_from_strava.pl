@@ -40,9 +40,9 @@ my $target_spreadsheet_name = $opts{target_spreadsheet_name};
 $target_spreadsheet_name ||= 'RaceParticipations';
 
 my @rider_columns = qw(ID Name Nickname ZP-FTP-Category StravaID ZwiftPowerID);
-my @race_columns = ('Rider ID','Race ID','Race Start Date','Race Title','Sortable Combined Race Title','Rider','StravaID','StartDateISO8661','EndDateISO8661');
+my @race_columns = ('Rider ID','Race ID','Race Start Date','Race Title','Sortable Combined Race Title','Licensed','Rider','StravaID','StartDateISO8661','EndDateISO8661');
 my @strava_activity_columns = qw(id name total_elevation_gain suffer_score average_watts weighted_average_watts max_watts moving_time elapsed_time start_date_local distance);
-my $strava_gsheet_column_index_start = 11;
+my $strava_gsheet_column_index_start = 13;
 
 my %rider_column_lookup;
 my $i = 0;
@@ -139,7 +139,7 @@ foreach my $race (@{$content->{values}}) {
 
     my @race_activity_row;
     # Assuming the activity with the highest suffer score/weighted watts of the day to be the race activity
-    my @sorted_activites = reverse sort { $a->{suffer_score} ? $a->{suffer_score} <=> $b->{suffer_score} : $a->{weighted_average_watts} <=> $b->{weighted_average_watts} } @$activities;
+    my @sorted_activites = reverse sort { defined $a->{suffer_score} ? $a->{suffer_score} <=> $b->{suffer_score} : $a->{weighted_average_watts} <=> $b->{weighted_average_watts} } @$activities;
     printf("\tMost likely race: %s\n", $sorted_activites[0]->{name});
 
     if ( distance($sorted_activites[0]->{name}, $race->[$race_column_lookup{'Race Title'}], {ignore_diacritics => 1}) > 5 ) {
@@ -151,7 +151,7 @@ foreach my $race (@{$content->{values}}) {
 
     foreach my $col ( @strava_activity_columns ) {
         my $value = $sorted_activites[0]->{$col};
-        if ( $value =~ /^[0-9.]+$/ ) {
+        if ( defined $value and $value =~ /^[0-9.]+$/ ) {
             $value = int($value + 0.5);
         }
         push @race_activity_row, $value;
