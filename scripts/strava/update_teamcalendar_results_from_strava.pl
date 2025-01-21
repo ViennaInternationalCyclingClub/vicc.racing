@@ -114,6 +114,7 @@ foreach my $race (@{$content->{values}}) {
     next unless ($race->[$race_column_lookup{'StartDateISO8661'}] and $race->[$race_column_lookup{'StartDateISO8661'}] =~ /^\d/);
     next unless $race->[$race_column_lookup{'EndDateISO8661'}];
     next unless $race->[$race_column_lookup{'StravaID'}];
+    next unless exists $known_tokens{$race->[$race_column_lookup{'StravaID'}]};
 
     my $start_date = strptime('%F', $race->[$race_column_lookup{'StartDateISO8661'}]);
     my $end_date = strptime('%F', $race->[$race_column_lookup{'EndDateISO8661'}]);
